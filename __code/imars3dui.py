@@ -1,5 +1,7 @@
 import os
 import glob
+import matplotlib.pyplot as plt
+import numpy as np
 
 from imars3d.backend.dataio.data import load_data, _get_filelist_by_dir
 
@@ -73,7 +75,26 @@ class Imars3dui:
         dc_folder = self.input_data_folders[DataType.dc]
         self.input_files[DataType.dc] = self.retrieve_list_of_files(dc_folder)
 
-    def load_data(self):
+    def load_and_display_data(self):
         self.proj_raw, self.ob_raw, self.dc_raw, self.rot_angles = load_data(ct_files=self.input_files[DataType.raw],
                                                                              ob_files=self.input_files[DataType.ob],
                                                                              dc_files=self.input_files[DataType.dc])
+
+        fig, (ax0, ax1, ax2) = plt.subplots(nrows=3, ncols=1, figsize=(5, 9))
+        proj_min = np.min(self.proj_raw, axis=0)
+        ob_min = np.min(self.ob_raw, axis=0)
+        dc_max = np.max(self.dc_raw, axis=0)
+
+        plt0 = ax0.imshow(proj_min)
+        fig.colorbar(plt0, ax=ax0)
+        ax0.set_title("np.min(proj_raw)")
+
+        plt1 = ax1.imshow(ob_min)
+        fig.colorbar(plt1, ax=ax1)
+        ax1.set_title("np.min(ob_raw)")
+
+        plt2 = ax2.imshow(dc_max)
+        fig.colorbar(plt2, ax=ax2)
+        ax2.set_title("np.min(dc_raw)")
+
+        fig.tight_layout()
