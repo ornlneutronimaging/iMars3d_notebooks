@@ -5,9 +5,11 @@ import numpy as np
 
 from imars3d.backend.dataio.data import load_data, _get_filelist_by_dir
 from imars3d.backend.morph.crop import crop
+from imars3d.backend.corrections.gamma_filter import gamma_filter
+from imars3d.backend.preparation.normalization import normalization
 
 from __code.file_folder_browser import FileFolderBrowser
-from __code import DEFAULT_CROP_ROI
+from __code import DEFAULT_CROP_ROI, NCORE
 
 
 class DataType:
@@ -120,11 +122,24 @@ class Imars3dui:
         self.proj_crop_min = crop(arrays=self.proj_min,
                                   crop_limit=crop_region)
 
-        fig, ax0 = plt.subplots(nrows=1, ncols=1,
-                                figsize=(7, 5),
-                                num="Cropped")
+        # fig, ax0 = plt.subplots(nrows=1, ncols=1,
+        #                         figsize=(7, 5),
+        #                         num="Cropped")
+        #
+        # fig1 = ax0.imshow(self.proj_crop_min)
+        # plt.colorbar(fig1, ax=ax0)
+        # ax0.set_title("min of proj")
 
-        fig1 = ax0.imshow(self.proj_crop_min)
-        plt.colorbar(fig1, ax=ax0)
-        ax0.set_title("min of proj")
+    def gamma_filtering(self):
+        self.proj_gamma = gamma_filter(arrays=self.proj_crop,
+                                       selective_median_filter=False,
+                                       diff_tomopy=20,
+                                       max_workers=NCORE,
+                                       median_kernel=3)
+
+    def normalization(self):
+        self.proj_norm = normalization(arrays=self.proj_gamma,
+                                       flats=self.ob_crop,
+                                       darks=self.dc_crop)
+
 
