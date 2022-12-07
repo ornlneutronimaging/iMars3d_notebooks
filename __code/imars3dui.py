@@ -6,6 +6,7 @@ import numpy as np
 from imars3d.backend.dataio.data import load_data, _get_filelist_by_dir
 
 from __code.file_folder_browser import FileFolderBrowser
+from __code import DEFAULT_CROP_ROI
 
 
 class DataType:
@@ -23,6 +24,12 @@ class Imars3dui:
 
     input_data_folders = {}
     input_files = {}
+    crop_roi = DEFAULT_CROP_ROI
+
+    # data arrays
+    proj_raw = None
+    ob_raw = None
+    dc_raw = None
 
     def __init__(self, working_dir="./"):
         self.working_dir = working_dir

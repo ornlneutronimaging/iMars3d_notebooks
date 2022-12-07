@@ -13,6 +13,7 @@ import os
 # from __code.ui_roi_selection import Ui_MainWindow as UiMainWindow
 from __code.config import percentage_of_images_to_use_for_roi_selection, \
     minimum_number_of_images_to_use_for_roi_selection
+from __code.imars3dui import DataType
 
 
 class Interface(QMainWindow):
@@ -51,6 +52,7 @@ class Interface(QMainWindow):
         ui_full_path = os.path.join(os.path.dirname(__file__),
                                     os.path.join('ui', 'ui_roi_selection.ui'))
         self.ui = load_ui(ui_full_path, baseinstance=self)
+        self.o_imars3dui = o_imars3dui
 
         self.init_statusbar()
         self.setWindowTitle("Background ROI Selection Tool")
@@ -63,13 +65,15 @@ class Interface(QMainWindow):
         top_layout.addWidget(self.ui.image_view)
         self.ui.widget.setLayout(top_layout)
         self.init_widgets()
-        # self.integrate_images()
-        # self.display_image()
+        self.integrate_images()
+        self.display_image()
 
     def init_widgets(self):
-        nbr_columns = self.ui.table_roi.columnCount()
-        for _col in range(nbr_columns):
-            self.ui.table_roi.setColumnWidth(_col, self.roi_column_width)
+        [left, right, top, bottom] = self.o_imars3dui.crop_roi
+        self.ui.label_left.setText(str(left))
+        self.ui.label_right.setText(str(right))
+        self.ui.label_top.setText(str(top))
+        self.ui.label_bottom.setText(str(bottom))
 
     def init_statusbar(self):
         self.eventProgress = QProgressBar(self.ui.statusbar)
@@ -113,29 +117,21 @@ class Interface(QMainWindow):
         display(HTML(html))
 
     def integrate_images(self):
-        percentage_of_data_to_use = self.percentage_of_data_to_use
+        # percentage_of_data_to_use = self.percentage_of_data_to_use
+        #
+        # nbr_files = len(self.o_imars3dui.proj_raw)
+        #
+        # if nbr_files < minimum_number_of_images_to_use_for_roi_selection:
+        #     nbr_files_to_use = nbr_files
+        # else:
+        #     nbr_files_to_use = np.int(percentage_of_data_to_use * nbr_files)
+        #     if nbr_files_to_use < minimum_number_of_images_to_use_for_roi_selection:
+        #         nbr_files_to_use = minimum_number_of_images_to_use_for_roi_selection
+        # random_list = random.sample(range(0, nbr_files), nbr_files_to_use)
+        #
+        # list_data_to_use = self.o_imars3dui.proj_raw[random_list]
 
-        if self.o_norm:
-            nbr_files = len(self.o_norm.data['sample']['data'])
-        else:
-            nbr_files = len(self.list_of_files)
-
-        if nbr_files < minimum_number_of_images_to_use_for_roi_selection:
-            nbr_files_to_use = nbr_files
-        else:
-            nbr_files_to_use = np.int(percentage_of_data_to_use * nbr_files)
-            if nbr_files_to_use < minimum_number_of_images_to_use_for_roi_selection:
-                nbr_files_to_use = minimum_number_of_images_to_use_for_roi_selection
-        random_list = random.sample(range(0, nbr_files), nbr_files_to_use)
-
-        if self.o_norm:
-            list_data_to_use = [self.o_norm.data['sample']['data'][_index] for _index in random_list]
-        else:
-            o_norm = Normalization()
-            list_of_files = np.array(self.list_of_files)
-            list_of_files = list(list_of_files[random_list])
-            o_norm.load(file=list_of_files, notebook=True)
-            list_data_to_use = o_norm.data['sample']['data']
+        list_data_to_use = self.o_imars3dui.proj_raw  # using all data
 
         self.integrated_image = np.mean(list_data_to_use, axis=0)
         [_height, _width] = np.shape(self.integrated_image)
