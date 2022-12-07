@@ -67,6 +67,7 @@ class Interface(QMainWindow):
         self.init_widgets()
         self.integrate_images()
         self.display_image()
+        self.init_roi()
 
     def init_widgets(self):
         [left, right, top, bottom] = self.o_imars3dui.crop_roi
@@ -75,17 +76,26 @@ class Interface(QMainWindow):
         self.ui.label_top.setText(str(top))
         self.ui.label_bottom.setText(str(bottom))
 
+    def init_roi(self):
+        [left, right, top, bottom] = self.o_imars3dui.crop_roi
+        _color = QtGui.QColor(62, 13, 244)
+        _pen = QtGui.QPen()
+        _pen.setColor(_color)
+        _pen.setWidthF(self.roi_width)
+        _roi_id = pg.ROI([left, top], [right-left, bottom-top], pen=_pen, scaleSnap=True)
+        _roi_id.addScaleHandle([1, 1], [0, 0])
+        _roi_id.addScaleHandle([0, 0], [1, 1])
+        self.ui.image_view.addItem(_roi_id)
+        # add connection to roi
+        _roi_id.sigRegionChanged.connect(self.roi_manually_moved)
+        return _roi_id
+
     def init_statusbar(self):
         self.eventProgress = QProgressBar(self.ui.statusbar)
         self.eventProgress.setMinimumSize(20, 14)
         self.eventProgress.setMaximumSize(540, 100)
         self.eventProgress.setVisible(False)
         self.ui.statusbar.addPermanentWidget(self.eventProgress)
-        # self.parent.eventProgress = QtGui.QProgressBar(self.ui.statusbar)
-        # self.parent.eventProgress.setMinimumSize(20, 14)
-        # self.parent.eventProgress.setMaximumSize(540, 100)
-        # self.parent.eventProgress.setVisible(False)
-        # self.ui.statusbar.addPermanentWidget(self.parent.eventProgress)
 
     def __get_recap(self, data_array):
         if data_array:
@@ -117,22 +127,7 @@ class Interface(QMainWindow):
         display(HTML(html))
 
     def integrate_images(self):
-        # percentage_of_data_to_use = self.percentage_of_data_to_use
-        #
-        # nbr_files = len(self.o_imars3dui.proj_raw)
-        #
-        # if nbr_files < minimum_number_of_images_to_use_for_roi_selection:
-        #     nbr_files_to_use = nbr_files
-        # else:
-        #     nbr_files_to_use = np.int(percentage_of_data_to_use * nbr_files)
-        #     if nbr_files_to_use < minimum_number_of_images_to_use_for_roi_selection:
-        #         nbr_files_to_use = minimum_number_of_images_to_use_for_roi_selection
-        # random_list = random.sample(range(0, nbr_files), nbr_files_to_use)
-        #
-        # list_data_to_use = self.o_imars3dui.proj_raw[random_list]
-
         list_data_to_use = self.o_imars3dui.proj_raw  # using all data
-
         self.integrated_image = np.mean(list_data_to_use, axis=0)
         [_height, _width] = np.shape(self.integrated_image)
         self.integrated_image_size['height'] = _height
@@ -413,19 +408,6 @@ class Interface(QMainWindow):
         if not _selection:
             _new_selection = QTableWidgetSelectionRange(0, 0, 0, 3)
             self.ui.table_roi.setRangeSelected(_new_selection, True)
-
-    def init_roi(self, x0=0, y0=0, width=0, height=0):
-        _color = QtGui.QColor(62, 13, 244)
-        _pen = QtGui.QPen()
-        _pen.setColor(_color)
-        _pen.setWidthF(self.roi_width)
-        _roi_id = pg.ROI([x0, y0], [width, height], pen=_pen, scaleSnap=True)
-        _roi_id.addScaleHandle([1, 1], [0, 0])
-        _roi_id.addScaleHandle([0, 0], [1, 1])
-        self.ui.image_view.addItem(_roi_id)
-        # add connection to roi
-        _roi_id.sigRegionChanged.connect(self.roi_manually_moved)
-        return _roi_id
 
     def check_add_remove_button_widgets_status(self):
         nbr_row = self.ui.table_roi.rowCount()
