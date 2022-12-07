@@ -88,7 +88,7 @@ class Interface(QMainWindow):
         self.ui.image_view.addItem(_roi_id)
         # add connection to roi
         _roi_id.sigRegionChanged.connect(self.roi_manually_moved)
-        return _roi_id
+        self.roi_id = _roi_id
 
     def init_statusbar(self):
         self.eventProgress = QProgressBar(self.ui.statusbar)
@@ -312,29 +312,18 @@ class Interface(QMainWindow):
             return ''
 
     def roi_manually_moved(self):
-        list_roi = self.list_roi
+        roi_id = self.roi_id
+        region = roi_id.getArraySlice(self.integrated_image, self.ui.image_view.imageItem)
 
-        for _row in list_roi.keys():
+        x0 = region[0][0].start
+        x1 = region[0][0].stop
+        y0 = region[0][1].start
+        y1 = region[0][1].stop
 
-            _roi = list_roi[_row]
-
-            roi_id = _roi['id']
-            region = roi_id.getArraySlice(self.integrated_image, self.ui.image_view.imageItem)
-
-            x0 = region[0][0].start
-            x1 = region[0][0].stop
-            y0 = region[0][1].start
-            y1 = region[0][1].stop
-
-            _roi['x0'] = x0
-            _roi['x1'] = x1
-            _roi['y0'] = y0
-            _roi['y1'] = y1
-
-            list_roi[_row] = _roi
-
-        self.list_roi = list_roi
-        self.update_table_roi_ui()
+        self.ui.label_left.setText(str(x0))
+        self.ui.label_right.setText(str(x1))
+        self.ui.label_top.setText(str(y0))
+        self.ui.label_bottom.setText(str(y1))
 
     def clear_roi_on_image_view(self):
         list_roi = self.list_roi
@@ -417,20 +406,14 @@ class Interface(QMainWindow):
             self.ui.remove_roi_button.setEnabled(False)
 
     def format_roi(self):
-        roi_selected = {}
-        for _key in self.list_roi.keys():
-            _roi = self.list_roi[_key]
-            x0 = _roi['x0']
-            y0 = _roi['y0']
-            x1 = _roi['x1']
-            y1 = _roi['y1']
-            new_entry = {'x0': x0, 'y0': y0, 'x1': x1, 'y1': y1}
-            roi_selected[_key] = new_entry
+        left = int(str(self.ui.label_left.text()))
+        right = int(str(self.ui.label_right.text()))
+        top = int(str(self.ui.label_top.text()))
+        bottom = int(str(self.ui.label_bottom.text()))
 
-        self.roi_selected = roi_selected
+        self.roi_selected = [left, right, top, bottom]
 
     def apply_clicked(self):
-        self.update_table_roi(None) #check ROI before leaving application
         self.format_roi()
         self.close()
         if self.callback:

@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from imars3d.backend.dataio.data import load_data, _get_filelist_by_dir
+from imars3d.backend.morph.crop import crop
 
 from __code.file_folder_browser import FileFolderBrowser
 from __code import DEFAULT_CROP_ROI
@@ -89,6 +90,7 @@ class Imars3dui:
 
         fig, (ax0, ax1, ax2) = plt.subplots(nrows=3, ncols=1, figsize=(5, 9))
         proj_min = np.min(self.proj_raw, axis=0)
+        self.proj_min = proj_min
         ob_min = np.min(self.ob_raw, axis=0)
         dc_max = np.max(self.dc_raw, axis=0)
 
@@ -105,3 +107,24 @@ class Imars3dui:
         ax2.set_title("np.min(dc_raw)")
 
         fig.tight_layout()
+
+    def crop_and_display_data(self, crop_region):
+
+        self.proj_crop = crop(arrays=self.proj_raw,
+                              crop_limit=crop_region)
+        self.ob_crop = crop(arrays=self.ob_raw,
+                            crop_limit=crop_region)
+        self.dc_crop = crop(arrays=self.dc_raw,
+                            crop_limit=crop_region)
+
+        self.proj_crop_min = crop(arrays=self.proj_min,
+                                  crop_limit=crop_region)
+
+        fig, ax0 = plt.subplots(nrows=1, ncols=1,
+                                figsize=(7, 5),
+                                num="Cropped")
+
+        fig1 = ax0.imshow(self.proj_crop_min)
+        plt.colorbar(fig1, ax=ax0)
+        ax0.set_title("min of proj")
+
