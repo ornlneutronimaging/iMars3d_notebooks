@@ -2,11 +2,16 @@ import os
 import glob
 import matplotlib.pyplot as plt
 import numpy as np
+import timeit
 
 from imars3d.backend.dataio.data import load_data, _get_filelist_by_dir
 from imars3d.backend.morph.crop import crop
 from imars3d.backend.corrections.gamma_filter import gamma_filter
 from imars3d.backend.preparation.normalization import normalization
+from imars3d.backend.diagnostics import tilt
+from imars3d.backend.dataio.data import _get_filelist_by_dir
+from imars3d.backend.diagnostics.rotation import find_rotation_center
+
 import tomopy
 
 from __code.file_folder_browser import FileFolderBrowser
@@ -114,6 +119,7 @@ class Imars3dui:
 
     def crop_and_display_data(self, crop_region):
 
+        print(f"Running Gamma filtering ...")
         self.proj_crop = crop(arrays=self.proj_raw,
                               crop_limit=crop_region)
         self.ob_crop = crop(arrays=self.ob_raw,
@@ -133,16 +139,24 @@ class Imars3dui:
         # ax0.set_title("min of proj")
 
     def gamma_filtering(self):
+        print(f"Running gamma filtering ...")
+        t0 = timeit.default_timer()
         self.proj_gamma = gamma_filter(arrays=self.proj_crop.astype(np.uint16),
                                        selective_median_filter=False,
                                        diff_tomopy=20,
                                        max_workers=NCORE,
                                        median_kernel=3)
+        t1 = timeit.default_timer()
+        print(f"Gamma filtering done in {t1-t0:.2f}s")
 
     def normalization_and_display(self):
+        print(f"Running normalization ...")
+        t0 = timeit.default_timer()
         self.proj_norm = normalization(arrays=self.proj_gamma,
                                        flats=self.ob_crop,
                                        darks=self.dc_crop)
+        t1 = timeit.default_timer()
+        print(f"normalization done in {t1-t0:.2f}s")
 
         plt.figure()
         proj_norm_min = np.min(self.proj_norm, axis=0)
@@ -175,3 +189,69 @@ class Imars3dui:
         fig1 = ax1.imshow(self.proj_norm_beam_fluctuation[0])
         ax1.set_title("after")
         plt.colorbar(fig1, ax=ax1)
+
+    def minus_log_and_display(self):
+        self.proj_mlog = tomopy.minus_log(self.proj_norm_beam_fluctuation)
+        plt.figure()
+        plt.imshow(self.proj_mlog[0])
+        plt.colorbar()
+
+    def tilt_correction_and_display(self):
+        rot_angles_sorted = self.rot_angles
+        rot_angles_sorted.sort()
+
+        self.mean_delta_angle = np.mean([y - x for (x, y) in zip(rot_angles_sorted[:-1],
+                                                            rot_angles_sorted[1:])])
+
+        print("Looking at 180 degrees pairs indexes!")
+        list_180_deg_pairs_idx = tilt.find_180_deg_pairs_idx(angles=self.rot_angles,
+                                                             atol=self.mean_delta_angle)
+
+        index_0_degree = list_180_deg_pairs_idx[0][0]
+        index_180_degree = list_180_deg_pairs_idx[1][0]
+
+        list_ct_files = self.input_files[DataType.raw]
+
+        file_0_degree = list_ct_files[index_0_degree]
+        file_180_degree = list_ct_files[index_180_degree]
+        file_180_next_degree = list_ct_files[index_180_degree+1]
+
+        print("Calculating tilt ...")
+        tilt_angle = tilt.calculate_tilt(image0=self.proj_mlog[index_0_degree],
+                                         image180=self.proj_mlog[index_180_degree])
+        print(f"   tilt angle: {tilt_angle:.2f}")
+
+        print("Applying tilt correction ...")
+        self.proj_tilt_corrected = tilt.apply_tilt_correction(arrays=self.proj_mlog,
+                                                        tilt=tilt_angle.x)
+
+        fig, (ax0, ax1) = plt.subplots(nrows=2, ncols=1,
+                                       num="Tilt correction",
+                                       figsize=(5, 10))
+
+        # before beam fluctuation
+        #proj_norm_min = np.min(proj_norm, axis=0)
+        #fig0 = ax0.imshow(proj_norm_min)
+        fig0 = ax0.imshow(self.proj_tilt_corrected[index_0_degree])
+        ax0.set_title("0 degree")
+        plt.colorbar(fig0, ax=ax0)
+
+        # after beam fluctuation
+        # proj_norm_beam_fluctuation_min = np.min(proj_norm_beam_fluctuation, axis=0)
+        # fig1 = ax1.imshow(proj_norm_beam_fluctuation_min)
+        fig1 = ax1.imshow(np.fliplr(self.proj_tilt_corrected[index_180_degree]))
+        ax1.set_title("180 degree (flipped)")
+        plt.colorbar(fig1, ax=ax1)
+
+    def rotation_center(self):
+        print(f"Running rotation center ...")
+        t0 = timeit.default_timer()
+        self.rot_center = find_rotation_center(arrays=self.proj_tilt_corrected,
+                                               angles=self.rot_angles,
+                                               in_degrees=True,
+                                               atol_deg=self.mean_delta_angle,
+                                               )
+        t1 = timeit.default_timer()
+        print(f"rotation center found in {t1-t0:.2f}s")
+        print(f" - value: {self.rot_center}")
+
