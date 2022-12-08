@@ -219,11 +219,12 @@ class Imars3dui:
         print("Calculating tilt ...")
         tilt_angle = tilt.calculate_tilt(image0=self.proj_mlog[index_0_degree],
                                          image180=self.proj_mlog[index_180_degree])
-        print(f"   tilt angle: {tilt_angle:.2f}")
+        self.tilt_angle = tilt_angle.x
+        print(f"   tilt angle: {tilt_angle.x:.2f}")
 
         print("Applying tilt correction ...")
         self.proj_tilt_corrected = tilt.apply_tilt_correction(arrays=self.proj_mlog,
-                                                        tilt=tilt_angle.x)
+                                                        tilt=self.tilt_angle)
 
         fig, (ax0, ax1) = plt.subplots(nrows=2, ncols=1,
                                        num="Tilt correction",
