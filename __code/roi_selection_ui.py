@@ -32,10 +32,13 @@ class Interface(QMainWindow):
     default_roi = {'x0': 0, 'y0': 0, 'x1': 50, 'y1': 50, 'id': None}
 
     def __init__(self, parent=None,
-                o_imars3dui=None,
+                 mode='crop',
+                 o_imars3dui=None,
                  percentage_of_data_to_use=None,
                  callback=None,
                  display_info_message=True):
+
+        self.mode = mode
 
         if display_info_message:
             display(HTML('<span style="font-size: 20px; color:blue">Check UI that popped up \
@@ -70,14 +73,21 @@ class Interface(QMainWindow):
         self.init_roi()
 
     def init_widgets(self):
-        [left, right, top, bottom] = self.o_imars3dui.crop_roi
+        if self.mode == 'crop':
+            [left, right, top, bottom] = self.o_imars3dui.crop_roi
+        else:
+            [left, right, top, bottom] = self.o_imars3dui.background_roi
         self.ui.label_left.setText(str(left))
         self.ui.label_right.setText(str(right))
         self.ui.label_top.setText(str(top))
         self.ui.label_bottom.setText(str(bottom))
 
     def init_roi(self):
-        [left, right, top, bottom] = self.o_imars3dui.crop_roi
+        if self.mode == 'crop':
+            [left, right, top, bottom] = self.o_imars3dui.crop_roi
+        else:
+            [left, right, top, bottom] = self.o_imars3dui.background_roi
+
         _color = QtGui.QColor(62, 13, 244)
         _pen = QtGui.QPen()
         _pen.setColor(_color)
@@ -127,7 +137,11 @@ class Interface(QMainWindow):
         display(HTML(html))
 
     def integrate_images(self):
-        list_data_to_use = self.o_imars3dui.proj_raw  # using all data
+        if self.mode == 'crop':
+            list_data_to_use = self.o_imars3dui.proj_raw  # using all data
+        else:
+            list_data_to_use = self.o_imars3dui.proj_norm
+
         self.integrated_image = np.mean(list_data_to_use, axis=0)
         [_height, _width] = np.shape(self.integrated_image)
         self.integrated_image_size['height'] = _height

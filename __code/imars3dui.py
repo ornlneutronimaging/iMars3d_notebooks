@@ -7,9 +7,10 @@ from imars3d.backend.dataio.data import load_data, _get_filelist_by_dir
 from imars3d.backend.morph.crop import crop
 from imars3d.backend.corrections.gamma_filter import gamma_filter
 from imars3d.backend.preparation.normalization import normalization
+import tomopy
 
 from __code.file_folder_browser import FileFolderBrowser
-from __code import DEFAULT_CROP_ROI, NCORE
+from __code import DEFAULT_CROP_ROI, NCORE, DEFAULT_BACKROUND_ROI
 
 
 class DataType:
@@ -28,6 +29,7 @@ class Imars3dui:
     input_data_folders = {}
     input_files = {}
     crop_roi = DEFAULT_CROP_ROI
+    background_roi = DEFAULT_BACKROUND_ROI
 
     # data arrays
     proj_raw = None
@@ -131,15 +133,45 @@ class Imars3dui:
         # ax0.set_title("min of proj")
 
     def gamma_filtering(self):
-        self.proj_gamma = gamma_filter(arrays=self.proj_crop,
+        self.proj_gamma = gamma_filter(arrays=self.proj_crop.astype(np.uint16),
                                        selective_median_filter=False,
                                        diff_tomopy=20,
                                        max_workers=NCORE,
                                        median_kernel=3)
 
-    def normalization(self):
+    def normalization_and_display(self):
         self.proj_norm = normalization(arrays=self.proj_gamma,
                                        flats=self.ob_crop,
                                        darks=self.dc_crop)
 
+        plt.figure()
+        proj_norm_min = np.min(self.proj_norm, axis=0)
+        plt.imshow(proj_norm_min)
+        plt.colorbar()
 
+    def beam_fluctuation_correction(self, background_region):
+        roi = [background_region[2], background_region[0],
+               background_region[3], background_region[1]]
+
+        self.proj_norm_beam_fluctuation = tomopy.prep.normalize.normalize_roi(
+            self.proj_norm,
+            roi=roi,
+            ncore=NCORE)
+
+        fig, (ax0, ax1) = plt.subplots(nrows=2, ncols=1,
+                                       num="Beam fluctuation",
+                                       figsize=(5,10))
+
+        # before beam fluctuation
+        #proj_norm_min = np.min(proj_norm, axis=0)
+        #fig0 = ax0.imshow(proj_norm_min)
+        fig0 = ax0.imshow(self.proj_norm[0])
+        ax0.set_title("before")
+        plt.colorbar(fig0, ax=ax0)
+
+        # after beam fluctuation
+        # proj_norm_beam_fluctuation_min = np.min(proj_norm_beam_fluctuation, axis=0)
+        # fig1 = ax1.imshow(proj_norm_beam_fluctuation_min)
+        fig1 = ax1.imshow(self.proj_norm_beam_fluctuation[0])
+        ax1.set_title("after")
+        plt.colorbar(fig1, ax=ax1)
