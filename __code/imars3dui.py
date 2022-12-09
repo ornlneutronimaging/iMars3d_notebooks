@@ -3,14 +3,21 @@ import glob
 import matplotlib.pyplot as plt
 import numpy as np
 import timeit
+from ipywidgets import interactive
+import ipywidgets as widgets
+from IPython.display import display
 
 from imars3d.backend.dataio.data import load_data, _get_filelist_by_dir
 from imars3d.backend.morph.crop import crop
 from imars3d.backend.corrections.gamma_filter import gamma_filter
 from imars3d.backend.preparation.normalization import normalization
 from imars3d.backend.diagnostics import tilt
-from imars3d.backend.dataio.data import _get_filelist_by_dir
+# from imars3d.backend.dataio.data import _get_filelist_by_dir
 from imars3d.backend.diagnostics.rotation import find_rotation_center
+from imars3d.backend.corrections.ring_removal import remove_ring_artifact
+from imars3d.backend.reconstruction import recon
+from imars3d.backend.dataio.data import save_data
+from imars3d.backend.corrections.intensity_fluctuation_correction import normalize_roi
 
 import tomopy
 
@@ -35,6 +42,9 @@ class Imars3dui:
     input_files = {}
     crop_roi = DEFAULT_CROP_ROI
     background_roi = DEFAULT_BACKROUND_ROI
+
+    # name of raw folder (used to customize output file name)
+    input_folder_base_name = None
 
     # data arrays
     proj_raw = None
@@ -71,17 +81,22 @@ class Imars3dui:
         if self.current_data_type == DataType.raw:
             list_folders = [list_folders]
 
-        list_files = self.retrieve_list_of_files(list_folders)
+        list_files = Imars3dui.retrieve_list_of_files(list_folders)
         self.input_files[self.current_data_type] = list_files
+
+        if self.current_data_type == DataType.raw:
+            self.input_folder_base_name = os.path.basename(list_folders[0])
 
         print(f"{self.current_data_type} folder selected: {list_folders} with {len(list_files)} files)")
 
-    def retrieve_list_of_files(self, list_folders):
+    @staticmethod
+    def retrieve_list_of_files(list_folders):
         list_files = []
         for _folder in list_folders:
             _tiff_files = glob.glob(os.path.join(_folder, "*.tif*"))
             list_files = [*list_files, *_tiff_files]
 
+        list_files.sort()
         return list_files
 
     def saving_list_of_files(self):
@@ -118,8 +133,7 @@ class Imars3dui:
         fig.tight_layout()
 
     def crop_and_display_data(self, crop_region):
-
-        print(f"Running Gamma filtering ...")
+        print(f"Running crop ...")
         self.proj_crop = crop(arrays=self.proj_raw,
                               crop_limit=crop_region)
         self.ob_crop = crop(arrays=self.ob_raw,
@@ -129,14 +143,7 @@ class Imars3dui:
 
         self.proj_crop_min = crop(arrays=self.proj_min,
                                   crop_limit=crop_region)
-
-        # fig, ax0 = plt.subplots(nrows=1, ncols=1,
-        #                         figsize=(7, 5),
-        #                         num="Cropped")
-        #
-        # fig1 = ax0.imshow(self.proj_crop_min)
-        # plt.colorbar(fig1, ax=ax0)
-        # ax0.set_title("min of proj")
+        print(f"cropping done!")
 
     def gamma_filtering(self):
         print(f"Running gamma filtering ...")
@@ -146,6 +153,7 @@ class Imars3dui:
                                        diff_tomopy=20,
                                        max_workers=NCORE,
                                        median_kernel=3)
+        del self.proj_crop
         t1 = timeit.default_timer()
         print(f"Gamma filtering done in {t1-t0:.2f}s")
 
@@ -155,6 +163,7 @@ class Imars3dui:
         self.proj_norm = normalization(arrays=self.proj_gamma,
                                        flats=self.ob_crop,
                                        darks=self.dc_crop)
+        del self.proj_gamma
         t1 = timeit.default_timer()
         print(f"normalization done in {t1-t0:.2f}s")
 
@@ -164,18 +173,23 @@ class Imars3dui:
         plt.colorbar()
 
     def beam_fluctuation_correction(self, background_region):
+        # [top, left, bottom, right]
         roi = [background_region[2], background_region[0],
                background_region[3], background_region[1]]
 
-        self.proj_norm_beam_fluctuation = tomopy.prep.normalize.normalize_roi(
-            self.proj_norm,
+        # self.proj_norm_beam_fluctuation = tomopy.prep.normalize.normalize_roi(
+        #     self.proj_norm,
+        #     roi=roi,
+        #     ncore=NCORE)
+
+        self.proj_norm_beam_fluctuation = normalize_roi(
+            ct=self.proj_norm,
             roi=roi,
-            ncore=NCORE)
+            max_workers=NCORE)
 
         fig, (ax0, ax1) = plt.subplots(nrows=2, ncols=1,
                                        num="Beam fluctuation",
                                        figsize=(5,10))
-
         # before beam fluctuation
         #proj_norm_min = np.min(proj_norm, axis=0)
         #fig0 = ax0.imshow(proj_norm_min)
@@ -191,7 +205,9 @@ class Imars3dui:
         plt.colorbar(fig1, ax=ax1)
 
     def minus_log_and_display(self):
+        del self.proj_norm
         self.proj_mlog = tomopy.minus_log(self.proj_norm_beam_fluctuation)
+        del self.proj_norm_beam_fluctuation
         plt.figure()
         plt.imshow(self.proj_mlog[0])
         plt.colorbar()
@@ -225,6 +241,8 @@ class Imars3dui:
         print("Applying tilt correction ...")
         self.proj_tilt_corrected = tilt.apply_tilt_correction(arrays=self.proj_mlog,
                                                         tilt=self.tilt_angle)
+        del self.proj_mlog
+        print(" tilt correction done!")
 
         fig, (ax0, ax1) = plt.subplots(nrows=2, ncols=1,
                                        num="Tilt correction",
@@ -256,3 +274,56 @@ class Imars3dui:
         print(f"rotation center found in {t1-t0:.2f}s")
         print(f" - value: {self.rot_center}")
 
+    def strikes_removal(self):
+        t0 = timeit.default_timer()
+        print("Running strikes removal ...")
+        self.proj_strikes_removed = remove_ring_artifact(arrays=self.proj_tilt_corrected,
+                                                         kernel_size=5,
+                                                         max_workers=NCORE)
+        print(" strikes removal done!")
+        t1 = timeit.default_timer()
+        print(f"time= {t1 - t0:.2f}s")
+
+    def reconstruction_and_display(self):
+        t0 = timeit.default_timer()
+        print("Running reconstruction ...")
+
+        # converting angles from deg to radians
+        rot_ang_rad = np.radians(self.rot_angles)
+
+        self.reconstruction = recon(arrays=self.proj_strikes_removed,
+                                    center=self.rot_center[0],
+                                    theta=rot_ang_rad,
+                                    )
+
+        print(" reconstruction done!")
+        t1 = timeit.default_timer()
+        print(f"time= {t1 - t0:.2f}s")
+
+        plt.figure()
+        plt.imshow(self.reconstruction[0])
+        plt.colorbar()
+        plt.show()
+
+        def plot_reconstruction(index):
+            plt.title(f"Reconstructed slice #{index}")
+            plt.imshow(self.reconstruction[index])
+            plt.show()
+
+        plot_reconstruction_ui = interactive(plot_reconstruction,
+                                             index=widgets.IntSlider(min=0,
+                                                                     max=len(self.reconstruction),
+                                                                     value=0))
+        display(plot_reconstruction_ui)
+
+    def export(self):
+        working_dir = os.path.join(self.working_dir, "shared", "processed_data")
+        o_file_browser = FileFolderBrowser(working_dir=working_dir,
+                                           next_function=self.export_data)
+        list_folder_selected = o_file_browser.select_output_folder(instruction="Select output folder")
+
+    def export_data(self, folder):
+        print(f"New folder will be created in {folder} and called {self.input_folder_base_name}_YYYYMMDDHHMM")
+        save_data(data=np.asarray(self.reconstruction),
+                  outputbase=folder,
+                  name=self.input_folder_base_name)
