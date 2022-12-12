@@ -67,7 +67,7 @@ class Imars3dui:
 
     def select_folder(self, data_type=DataType.raw, multiple_flag=False):
         self.current_data_type = data_type
-        working_dir = os.path.join(self.working_dir, default_input_folder[data_type])
+        working_dir = os.path.join(self.working_dir, 'raw', default_input_folder[data_type])
 
         o_file_browser = FileFolderBrowser(working_dir=working_dir,
                                            next_function=self.data_selected)
