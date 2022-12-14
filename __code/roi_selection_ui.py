@@ -26,8 +26,6 @@ class Interface(QMainWindow):
     o_norm = None
     roi_column_width = 70
     integrated_image = None
-    integrated_image_size = {'width': -1, 'height': -1}
-
     list_roi = {} #  'row": {'x0':None, 'y0': None, 'x1': None, 'y1': None}
     default_roi = {'x0': 0, 'y0': 0, 'x1': 50, 'y1': 50, 'id': None}
 
@@ -69,6 +67,8 @@ class Interface(QMainWindow):
         self.ui.widget.setLayout(top_layout)
         self.init_widgets()
         self.integrate_images()
+        integrated_image_size = {'width': -1, 'height': -1}
+
         self.display_image()
         self.init_roi()
 

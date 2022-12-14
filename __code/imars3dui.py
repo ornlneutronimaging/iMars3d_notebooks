@@ -115,20 +115,20 @@ class Imars3dui:
         fig, (ax0, ax1, ax2) = plt.subplots(nrows=3, ncols=1, figsize=(5, 9))
         proj_min = np.min(self.proj_raw, axis=0)
         self.proj_min = proj_min
-        ob_min = np.min(self.ob_raw, axis=0)
+        ob_max = np.max(self.ob_raw, axis=0)
         dc_max = np.max(self.dc_raw, axis=0)
 
         plt0 = ax0.imshow(proj_min)
         fig.colorbar(plt0, ax=ax0)
         ax0.set_title("np.min(proj_raw)")
 
-        plt1 = ax1.imshow(ob_min)
+        plt1 = ax1.imshow(ob_max)
         fig.colorbar(plt1, ax=ax1)
-        ax1.set_title("np.min(ob_raw)")
+        ax1.set_title("np.max(ob_raw)")
 
         plt2 = ax2.imshow(dc_max)
         fig.colorbar(plt2, ax=ax2)
-        ax2.set_title("np.min(dc_raw)")
+        ax2.set_title("np.max(dc_raw)")
 
         fig.tight_layout()
 
