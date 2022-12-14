@@ -262,6 +262,16 @@ class Imars3dui:
         ax1.set_title("180 degree (flipped)")
         plt.colorbar(fig1, ax=ax1)
 
+    def strikes_removal(self):
+        t0 = timeit.default_timer()
+        print("Running strikes removal ...")
+        self.proj_strikes_removed = remove_ring_artifact(arrays=self.proj_tilt_corrected,
+                                                         kernel_size=5,
+                                                         max_workers=NCORE)
+        print(" strikes removal done!")
+        t1 = timeit.default_timer()
+        print(f"time= {t1 - t0:.2f}s")
+
     def rotation_center(self):
         print(f"Running rotation center ...")
         t0 = timeit.default_timer()
@@ -273,16 +283,6 @@ class Imars3dui:
         t1 = timeit.default_timer()
         print(f"rotation center found in {t1-t0:.2f}s")
         print(f" - value: {self.rot_center}")
-
-    def strikes_removal(self):
-        t0 = timeit.default_timer()
-        print("Running strikes removal ...")
-        self.proj_strikes_removed = remove_ring_artifact(arrays=self.proj_tilt_corrected,
-                                                         kernel_size=5,
-                                                         max_workers=NCORE)
-        print(" strikes removal done!")
-        t1 = timeit.default_timer()
-        print(f"time= {t1 - t0:.2f}s")
 
     def reconstruction_and_display(self):
         t0 = timeit.default_timer()
