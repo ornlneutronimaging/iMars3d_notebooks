@@ -279,6 +279,7 @@ class Imars3dui:
         t0 = timeit.default_timer()
         self.rot_center = find_rotation_center(arrays=self.proj_tilt_corrected,
                                                angles=self.rot_angles,
+                                               num_pairs=-1,
                                                in_degrees=True,
                                                atol_deg=self.mean_delta_angle,
                                                )
