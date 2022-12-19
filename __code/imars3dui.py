@@ -85,7 +85,7 @@ class Imars3dui:
         self.input_files[self.current_data_type] = list_files
 
         if self.current_data_type == DataType.raw:
-            self.input_folder_base_name = os.path.basename(list_folders[0])
+            self.input_folder_base_name = os.path.basename(os.path.abspath(list_folders[0]))
 
         print(f"{self.current_data_type} folder selected: {list_folders} with {len(list_files)} files)")
 
