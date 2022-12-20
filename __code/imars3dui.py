@@ -19,6 +19,8 @@ from imars3d.backend.reconstruction import recon
 from imars3d.backend.dataio.data import save_data
 from imars3d.backend.corrections.intensity_fluctuation_correction import normalize_roi
 
+from __code.tilt.direct_minimization import DirectMinimization
+
 import tomopy
 
 from __code.file_folder_browser import FileFolderBrowser
@@ -214,14 +216,13 @@ class Imars3dui:
         plt.imshow(self.proj_mlog[0])
         plt.colorbar()
 
-    def tilt_correction_and_display(self):
+    def find_0_180_degrees_files(self):
         rot_angles_sorted = self.rot_angles
         rot_angles_sorted.sort()
 
         self.mean_delta_angle = np.mean([y - x for (x, y) in zip(rot_angles_sorted[:-1],
                                                             rot_angles_sorted[1:])])
 
-        print("Looking at 180 degrees pairs indexes!")
         list_180_deg_pairs_idx = tilt.find_180_deg_pairs_idx(angles=self.rot_angles,
                                                              atol=self.mean_delta_angle)
 
@@ -229,40 +230,103 @@ class Imars3dui:
         index_180_degree = list_180_deg_pairs_idx[1][0]
 
         list_ct_files = self.input_files[DataType.raw]
+        short_list_cf_files = [os.path.basename(_file) for _file in list_ct_files]
 
-        file_0_degree = list_ct_files[index_0_degree]
-        file_180_degree = list_ct_files[index_180_degree]
-        file_180_next_degree = list_ct_files[index_180_degree+1]
+        #left panel
+        left_label = widgets.Label("0 degree file")
+        self.left_select = widgets.Select(options=short_list_cf_files,
+                                     value=short_list_cf_files[index_0_degree],
+                                     layout=widgets.Layout(width="500px",
+                                                           height="400px"))
+        left_vbox = widgets.VBox([left_label, self.left_select])
+
+        right_label = widgets.Label("180 degree file")
+        self.right_select = widgets.Select(options=short_list_cf_files,
+                                     value=short_list_cf_files[index_180_degree],
+                                     layout=widgets.Layout(width="500px",
+                                                           height="400px"))
+        right_vbox = widgets.VBox([right_label, self.right_select])
+
+        hbox = widgets.HBox([left_vbox, right_vbox])
+        display(hbox)
+
+    def calculate_tilt(self):
+        # calculate the tilt using all 3 methods and let the user chose the one he wants to apply on the data
+
+        # direct minimization
+
+
+        # phase correlation
+
+
+        # use center
+
+
+
+        # user defined
+
+
+
+
+
+
+
 
         print("Calculating tilt ...")
-        tilt_angle = tilt.calculate_tilt(image0=self.proj_mlog[index_0_degree],
-                                         image180=self.proj_mlog[index_180_degree])
-        self.tilt_angle = tilt_angle.x
-        print(f"   tilt angle: {tilt_angle.x:.2f}")
+        self.index_0_degree = self.left_select.index
+        self.index_180_degree = self.right_select.index
 
+        tilt_angle = tilt.calculate_tilt(image0=self.proj_mlog[self.index_0_degree],
+                                         image180=self.proj_mlog[self.index_180_degree])
+        # self.tilt_angle = tilt_angle.x
+
+        label = widgets.Label("Tilt value (degrees):",
+                              layout=widgets.Layout(width="130px"))
+        self.tilt = widgets.BoundedFloatText(value=tilt_angle.x,
+                                             min=-5.,
+                                             max=5.,
+                                             step=0.01,
+                                             )
+        hbox = widgets.HBox([label, self.tilt])
+        display(hbox)
+
+    def apply_tilt_and_display(self):
         print("Applying tilt correction ...")
         self.proj_tilt_corrected = tilt.apply_tilt_correction(arrays=self.proj_mlog,
-                                                        tilt=self.tilt_angle)
-        del self.proj_mlog
-        print(" tilt correction done!")
+                                                              tilt=self.tilt.value)
 
-        fig, (ax0, ax1) = plt.subplots(nrows=2, ncols=1,
-                                       num="Tilt correction",
-                                       figsize=(5, 10))
+        fig, ax = plt.subplots(nrows=1, ncols=1, num="Tilt Correction", figsize=(10, 10))
 
-        # before beam fluctuation
-        #proj_norm_min = np.min(proj_norm, axis=0)
-        #fig0 = ax0.imshow(proj_norm_min)
-        fig0 = ax0.imshow(self.proj_tilt_corrected[index_0_degree])
-        ax0.set_title("0 degree")
-        plt.colorbar(fig0, ax=ax0)
+        index_0_image = self.proj_tilt_corrected[self.index_0_degree]
+        index_180_image_flipped = np.fliplr(self.proj_tilt_corrected[self.index_180_degree])
+        overlap_image = np.add(index_0_image, index_180_image_flipped)/2.
+        fig0 = ax.imshow(overlap_image)
+        plt.colorbar(fig0, ax=ax)
 
-        # after beam fluctuation
-        # proj_norm_beam_fluctuation_min = np.min(proj_norm_beam_fluctuation, axis=0)
-        # fig1 = ax1.imshow(proj_norm_beam_fluctuation_min)
-        fig1 = ax1.imshow(np.fliplr(self.proj_tilt_corrected[index_180_degree]))
-        ax1.set_title("180 degree (flipped)")
-        plt.colorbar(fig1, ax=ax1)
+    # def tilt_correction_and_display(self):
+    #     print("Applying tilt correction ...")
+    #     self.proj_tilt_corrected = tilt.apply_tilt_correction(arrays=self.proj_mlog,
+    #                                                     tilt=self.tilt_angle)
+    #     del self.proj_mlog
+    #     print(" tilt correction done!")
+    #
+    #     fig, (ax0, ax1) = plt.subplots(nrows=2, ncols=1,
+    #                                    num="Tilt correction",
+    #                                    figsize=(5, 10))
+    #
+    #     # before beam fluctuation
+    #     #proj_norm_min = np.min(proj_norm, axis=0)
+    #     #fig0 = ax0.imshow(proj_norm_min)
+    #     fig0 = ax0.imshow(self.proj_tilt_corrected[index_0_degree])
+    #     ax0.set_title("0 degree")
+    #     plt.colorbar(fig0, ax=ax0)
+    #
+    #     # after beam fluctuation
+    #     # proj_norm_beam_fluctuation_min = np.min(proj_norm_beam_fluctuation, axis=0)
+    #     # fig1 = ax1.imshow(proj_norm_beam_fluctuation_min)
+    #     fig1 = ax1.imshow(np.fliplr(self.proj_tilt_corrected[index_180_degree]))
+    #     ax1.set_title("180 degree (flipped)")
+    #     plt.colorbar(fig1, ax=ax1)
 
     def strikes_removal(self):
         t0 = timeit.default_timer()
