@@ -264,10 +264,10 @@ class Imars3dui:
                            self.tilt_checkbox3,
                            self.tilt_checkbox4]
         full_list_checkboxes = list_checkboxes[:]
-        list_methods = [self.checkbox1_changed,
-                        self.checkbox2_changed,
-                        self.checkbox3_changed,
-                        self.checkbox4_changed]
+        list_methods = [self.tilt_checkbox1_changed,
+                        self.tilt_checkbox2_changed,
+                        self.tilt_checkbox3_changed,
+                        self.tilt_checkbox4_changed]
 
         input_checkbox = list_checkboxes.pop(checkbox_index - 1)
         other_checkboxes = list_checkboxes
