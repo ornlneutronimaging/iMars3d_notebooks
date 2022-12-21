@@ -6,6 +6,7 @@ import timeit
 from ipywidgets import interactive
 import ipywidgets as widgets
 from IPython.display import display
+from IPython.core.display import HTML
 
 from imars3d.backend.dataio.data import load_data, _get_filelist_by_dir
 from imars3d.backend.morph.crop import crop
@@ -20,12 +21,17 @@ from imars3d.backend.dataio.data import save_data
 from imars3d.backend.corrections.intensity_fluctuation_correction import normalize_roi
 
 from __code.tilt.direct_minimization import DirectMinimization
+from __code.tilt.phase_correlation import PhaseCorrelation
+from __code.tilt.use_center import UseCenter
 
 import tomopy
 
 from __code.file_folder_browser import FileFolderBrowser
 from __code import DEFAULT_CROP_ROI, NCORE, DEFAULT_BACKROUND_ROI
 
+IN_PROGRESS = "Calculation in progress"
+DONE = "Done!"
+QUEUE = "In queue"
 
 class DataType:
     raw = 'raw'
@@ -250,21 +256,131 @@ class Imars3dui:
         hbox = widgets.HBox([left_vbox, right_vbox])
         display(hbox)
 
+    # tilt correction
+    def tilt_checkbox_handler(self, checkbox_index=1):
+
+        list_checkboxes = [self.tilt_checkbox1,
+                           self.tilt_checkbox2,
+                           self.tilt_checkbox3,
+                           self.tilt_checkbox4]
+        full_list_checkboxes = list_checkboxes[:]
+        list_methods = [self.checkbox1_changed,
+                        self.checkbox2_changed,
+                        self.checkbox3_changed,
+                        self.checkbox4_changed]
+
+        input_checkbox = list_checkboxes.pop(checkbox_index - 1)
+        other_checkboxes = list_checkboxes
+
+        for _check, _method in zip(full_list_checkboxes, list_methods):
+            _check.unobserve(_method, names='value')
+
+        new_value = input_checkbox.value
+        if new_value is False:
+            input_checkbox.value = True
+            for _check, _method in zip(full_list_checkboxes, list_methods):
+                _check.observe(_method, names='value')
+                return
+
+        for _check in other_checkboxes:
+            _check.value = not new_value
+
+        for _check, _method in zip(full_list_checkboxes, list_methods):
+            _check.observe(_method, names='value')
+
+    def tilt_checkbox1_changed(self, value):
+        self.tilt_checkbox_handler(checkbox_index=1)
+
+    def tilt_checkbox2_changed(self, value):
+        self.tilt_checkbox_handler(checkbox_index=2)
+
+    def tilt_checkbox3_changed(self, value):
+        self.tilt_checkbox_handler(checkbox_index=3)
+
+    def tilt_checkbox4_changed(self, value):
+        self.tilt_checkbox_handler(checkbox_index=4)
+
     def calculate_tilt(self):
         # calculate the tilt using all 3 methods and let the user chose the one he wants to apply on the data
+        display(HTML('<span style="font-size: 15px; color:blue">Select the tilt value you want to use:</span>'))
+
+        line1 = widgets.HBox([widgets.Checkbox(value=True,
+                                               description="Direct minimization"),
+                              widgets.Label("N/A",
+                                            layout=widgets.Layout(width="100px")),
+                              widgets.Label("(deg)",
+                                            layout=widgets.Layout(width="40px")),
+                              widgets.Label(IN_PROGRESS,
+                                            layout=widgets.Layout(width="200px"))
+                              ])
+        self.tilt_checkbox1 = line1.children[0]
+        self.direct_minimization_value = line1.children[1]
+        direct_minimization_status = line1.children[3]
+
+        line2 = widgets.HBox([widgets.Checkbox(value=False,
+                                               description="Phase correlation"),
+                              widgets.Label("N/A",
+                                            layout=widgets.Layout(width="100px")),
+                              widgets.Label("(deg)",
+                                            layout=widgets.Layout(width="40px")),
+                              widgets.Label(QUEUE,
+                                            layout=widgets.Layout(width="200px")),
+                              ])
+        self.tilt_checkbox2 = line2.children[0]
+        self.phase_correlation_value = line2.children[1]
+        phase_correlation_status = line2.children[3]
+
+        line3 = widgets.HBox([widgets.Checkbox(value=False,
+                                               description="Use center"),
+                              widgets.Label("N/A",
+                                            layout=widgets.Layout(width="100px")),
+                              widgets.Label("(deg)",
+                                            layout=widgets.Layout(width="40px")),
+                              widgets.Label(QUEUE,
+                                            layout=widgets.Layout(width="200px")),
+                              ])
+        self.tilt_checkbox3 = line3.children[0]
+        self.use_center_value = line3.children[1]
+        use_center_status = line3.children[3]
+
+        line4 = widgets.HBox([widgets.Checkbox(value=False,
+                                               description="User defined"),
+                              widgets.FloatText(0,
+
+                                                layout=widgets.Layout(width="100px")),
+                              widgets.Label("(deg)",
+                                            layout=widgets.Layout(width="40px")),
+                              widgets.Label("",
+                                            layout=widgets.Layout(width="200px")),
+                              ])
+        self.tilt_checkbox4 = line4.children[0]
+        self.user_value = line4.children[1]
+
+        self.tilt_checkbox1.observe(self.tilt_checkbox1_changed, names="value")
+        self.tilt_checkbox2.observe(self.tilt_checkbox2_changed, names="value")
+        self.tilt_checkbox3.observe(self.tilt_checkbox3_changed, names="value")
+        self.tilt_checkbox4.observe(self.tilt_checkbox4_changed, names="value")
+
+        vertical_layout = widgets.VBox([line1, line2, line3, line4])
+        display(vertical_layout)
 
         # direct minimization
-
+        # o_direct = DirectMinimization(index_0_degree=self.index_0_degree,
+        #                               index_180_degree=self.index_180_degree)
+        # tilt_value = o_direct.compute()
+        # self.direct_minimization_value.value = f"{tilt_value:.3f}"
+        direct_minimization_status.value = DONE
+        phase_correlation_status.value = IN_PROGRESS
 
         # phase correlation
 
+        phase_correlation_status.value = DONE
+        use_center_status.value = IN_PROGRESS
 
         # use center
 
 
-
-        # user defined
-
+        use_center_status.value = DONE
 
 
 
@@ -272,23 +388,23 @@ class Imars3dui:
 
 
 
-        print("Calculating tilt ...")
-        self.index_0_degree = self.left_select.index
-        self.index_180_degree = self.right_select.index
-
-        tilt_angle = tilt.calculate_tilt(image0=self.proj_mlog[self.index_0_degree],
-                                         image180=self.proj_mlog[self.index_180_degree])
-        # self.tilt_angle = tilt_angle.x
-
-        label = widgets.Label("Tilt value (degrees):",
-                              layout=widgets.Layout(width="130px"))
-        self.tilt = widgets.BoundedFloatText(value=tilt_angle.x,
-                                             min=-5.,
-                                             max=5.,
-                                             step=0.01,
-                                             )
-        hbox = widgets.HBox([label, self.tilt])
-        display(hbox)
+        # print("Calculating tilt ...")
+        # self.index_0_degree = self.left_select.index
+        # self.index_180_degree = self.right_select.index
+        #
+        # tilt_angle = tilt.calculate_tilt(image0=self.proj_mlog[self.index_0_degree],
+        #                                  image180=self.proj_mlog[self.index_180_degree])
+        # # self.tilt_angle = tilt_angle.x
+        #
+        # label = widgets.Label("Tilt value (degrees):",
+        #                       layout=widgets.Layout(width="130px"))
+        # self.tilt = widgets.BoundedFloatText(value=tilt_angle.x,
+        #                                      min=-5.,
+        #                                      max=5.,
+        #                                      step=0.01,
+        #                                      )
+        # hbox = widgets.HBox([label, self.tilt])
+        # display(hbox)
 
     def apply_tilt_and_display(self):
         print("Applying tilt correction ...")
