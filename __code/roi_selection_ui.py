@@ -41,6 +41,7 @@ class Interface(QMainWindow):
         self.mode = mode
 
         if display_info_message:
+            display(HTML('<span style="font-size: 20px; color=green">Please be patient!</span>'))
             display(HTML('<span style="font-size: 20px; color:blue">Check UI that popped up \
                 (maybe hidden behind this browser!)</span>'))
 

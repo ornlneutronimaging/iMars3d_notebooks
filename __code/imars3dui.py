@@ -159,7 +159,11 @@ class Imars3dui:
 
         fig.tight_layout()
 
-    def crop_and_display_data(self, crop_region):
+    def saving_crop_region(self, crop_region):
+        self.crop_region = crop_region
+
+    def crop_and_display_data(self):
+        crop_region = self.crop_region
         print(f"Running crop ...")
         self.proj_crop = crop(arrays=self.proj_raw,
                               crop_limit=crop_region)
