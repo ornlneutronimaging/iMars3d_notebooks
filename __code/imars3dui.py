@@ -203,7 +203,12 @@ class Imars3dui:
         plt.imshow(proj_norm_min)
         plt.colorbar()
 
-    def beam_fluctuation_correction(self, background_region):
+    def saving_beam_fluctuation_correction(self, background_region):
+        self.background_region = background_region
+
+    def beam_fluctuation_correction(self):
+        background_region = self.background_region
+
         # [top, left, bottom, right]
         roi = [background_region[2], background_region[0],
                background_region[3], background_region[1]]
@@ -220,7 +225,7 @@ class Imars3dui:
 
         fig, (ax0, ax1) = plt.subplots(nrows=2, ncols=1,
                                        num="Beam fluctuation",
-                                       figsize=(5,10))
+                                       figsize=(5, 10))
         # before beam fluctuation
         #proj_norm_min = np.min(proj_norm, axis=0)
         #fig0 = ax0.imshow(proj_norm_min)
