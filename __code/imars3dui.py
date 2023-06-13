@@ -8,7 +8,10 @@ import ipywidgets as widgets
 from IPython.display import display
 from IPython.core.display import HTML
 
-from imars3d.backend.dataio.data import load_data, _get_filelist_by_dir
+import warnings
+warnings.filterwarnings('ignore')
+
+from imars3d.backend.dataio.data import load_data
 from imars3d.backend.morph.crop import crop
 from imars3d.backend.corrections.gamma_filter import gamma_filter
 from imars3d.backend.preparation.normalization import normalization
@@ -71,7 +74,7 @@ class Imars3dui:
     dc_raw = None
 
     def __init__(self, working_dir="./"):
-        self.working_dir = working_dir
+        self.working_dir = os.path.join(working_dir, 'raw', default_input_folder[DataType.raw])
 
     def select_raw(self):
         self.select_folder(data_type=DataType.raw)
@@ -85,20 +88,23 @@ class Imars3dui:
                            multiple_flag=True)
 
     def select_folder(self, data_type=DataType.raw, multiple_flag=False):
-        self.current_data_type = data_type
-        working_dir = os.path.join(self.working_dir, 'raw', default_input_folder[data_type])
 
-        o_file_browser = FileFolderBrowser(working_dir=working_dir,
+        self.current_data_type = data_type
+
+        if not os.path.exists(self.working_dir):
+            self.working_dir = os.path.abspath(os.path.expanduser("~"))
+
+        o_file_browser = FileFolderBrowser(working_dir=self.working_dir,
                                            next_function=self.data_selected)
-        list_folder_selected = o_file_browser.select_input_folder(instruction=
-                                                                  f"Select Folder of {data_type}",
-                                                                  multiple_flag=multiple_flag)
+        o_file_browser.select_input_folder(instruction=f"Select Folder of {data_type}",
+                                           multiple_flag=multiple_flag)
 
     def data_selected(self, list_folders):
         self.input_data_folders[self.current_data_type] = list_folders
 
         if self.current_data_type == DataType.raw:
             list_folders = [os.path.abspath(list_folders)]
+            self.working_dir = os.path.dirname(os.path.dirname(list_folders[0]))  # default folder is the parent folder of sample
         else:
             list_folders = [os.path.abspath(_folder) for _folder in list_folders]
 
