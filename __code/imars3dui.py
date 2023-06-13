@@ -249,17 +249,24 @@ class Imars3dui:
         plt.colorbar()
 
     def find_0_180_degrees_files(self):
-        rot_angles_sorted = self.rot_angles
-        rot_angles_sorted.sort()
+        rot_angles = self.rot_angles
 
-        self.mean_delta_angle = np.mean([y - x for (x, y) in zip(rot_angles_sorted[:-1],
-                                                            rot_angles_sorted[1:])])
+        # let's find where is index of the angle the closer to 180.0
+        angles_minus_180 = rot_angles - 180.0
+        abs_angles_minus_180 = np.abs(angles_minus_180)
+        minimum_value = np.min(abs_angles_minus_180)
 
-        list_180_deg_pairs_idx = tilt.find_180_deg_pairs_idx(angles=self.rot_angles,
-                                                             atol=self.mean_delta_angle)
+        index_0_degree = 0
+        index_180_degree = np.where(minimum_value == abs_angles_minus_180)[0][0]
 
-        index_0_degree = list_180_deg_pairs_idx[0][0]
-        index_180_degree = list_180_deg_pairs_idx[1][0]
+        # self.mean_delta_angle = np.mean([y - x for (x, y) in zip(rot_angles_sorted[:-1],
+        #                                                     rot_angles_sorted[1:])])
+        #
+        # list_180_deg_pairs_idx = tilt.find_180_deg_pairs_idx(angles=self.rot_angles,
+        #                                                      atol=self.mean_delta_angle)
+        #
+        # index_0_degree = list_180_deg_pairs_idx[0][0]
+        # index_180_degree = list_180_deg_pairs_idx[1][0]
 
         list_ct_files = self.input_files[DataType.raw]
         short_list_cf_files = [os.path.basename(_file) for _file in list_ct_files]
