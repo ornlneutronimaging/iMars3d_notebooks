@@ -159,11 +159,46 @@ class Imars3dui:
 
         fig.tight_layout()
 
-    def saving_crop_region(self, crop_region):
-        self.crop_region = crop_region
+    def crop(self):
+        list_images = self.proj_raw
+        integrated_image = np.mean(list_images, axis=0)
+        height, width = np.shape(integrated_image)
 
-    def crop_and_display_data(self):
-        crop_region = self.crop_region
+        def plot_crop(left, right, top, bottom):
+
+            fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(5, 5))
+            ax.imshow(integrated_image)
+
+            ax.axvline(left, color='blue', linestyle='--')
+            ax.axvline(right, color='red', linestyle='--')
+
+            ax.axhline(top, color='blue', linestyle='--')
+            ax.axhline(bottom, color='red', linestyle='--')
+
+            return left, right, top, bottom
+
+        self.cropping = interactive(plot_crop,
+                                    left=widgets.IntSlider(min=0,
+                                                           max=width - 1,
+                                                           value=0,
+                                                           continuous_update=True),
+                                    right=widgets.IntSlider(min=0,
+                                                            max=width - 1,
+                                                            value=width - 1,
+                                                            continuous_update=False),
+                                    top=widgets.IntSlider(min=0,
+                                                          max=height - 1,
+                                                          value=0,
+                                                          continuous_update=False),
+                                    bottom=widgets.IntSlider(min=0,
+                                                             max=height - 1,
+                                                             value=height - 1,
+                                                             continuous_update=False),
+                                   )
+        display(self.cropping)
+
+    def perform_cropping(self):
+        crop_region = list(self.cropping.result)
         print(f"Running crop ...")
         self.proj_crop = crop(arrays=self.proj_raw,
                               crop_limit=crop_region)
