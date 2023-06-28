@@ -238,11 +238,45 @@ class Imars3dui:
         plt.imshow(proj_norm_min)
         plt.colorbar()
 
-    def saving_beam_fluctuation_correction(self, background_region):
-        self.background_region = background_region
+    def select_beam_fluctuation_roi(self):
+        integrated_image = np.mean(self.proj_norm, axis=0)
+        height, width = np.shape(integrated_image)
+
+        def plot_crop(left, right, top, bottom):
+
+            fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(5, 5))
+            ax.imshow(integrated_image)
+
+            ax.axvline(left, color='blue', linestyle='--')
+            ax.axvline(right, color='red', linestyle='--')
+
+            ax.axhline(top, color='blue', linestyle='--')
+            ax.axhline(bottom, color='red', linestyle='--')
+
+            return left, right, top, bottom
+
+        self.beam_fluctuation_roi = interactive(plot_crop,
+                                    left=widgets.IntSlider(min=0,
+                                                           max=width - 1,
+                                                           value=0,
+                                                           continuous_update=True),
+                                    right=widgets.IntSlider(min=0,
+                                                            max=width - 1,
+                                                            value=width - 1,
+                                                            continuous_update=False),
+                                    top=widgets.IntSlider(min=0,
+                                                          max=height - 1,
+                                                          value=0,
+                                                          continuous_update=False),
+                                    bottom=widgets.IntSlider(min=0,
+                                                             max=height - 1,
+                                                             value=height - 1,
+                                                             continuous_update=False),
+                                   )
+        display(self.beam_fluctuation_roi)
 
     def beam_fluctuation_correction(self):
-        background_region = self.background_region
+        background_region = list(self.beam_fluctuation_roi.result)
 
         # [top, left, bottom, right]
         roi = [background_region[2], background_region[0],
