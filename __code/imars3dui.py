@@ -259,9 +259,11 @@ class Imars3dui:
         index_0_degree = 0
         index_180_degree = np.where(minimum_value == abs_angles_minus_180)[0][0]
 
-        # self.mean_delta_angle = np.mean([y - x for (x, y) in zip(rot_angles_sorted[:-1],
-        #                                                     rot_angles_sorted[1:])])
-        #
+        rot_angles_sorted = rot_angles[:]
+        rot_angles_sorted.sorted()
+        self.mean_delta_angle = np.mean([y - x for (x, y) in zip(rot_angles_sorted[:-1],
+                                                            rot_angles_sorted[1:])])
+
         # list_180_deg_pairs_idx = tilt.find_180_deg_pairs_idx(angles=self.rot_angles,
         #                                                      atol=self.mean_delta_angle)
         #
