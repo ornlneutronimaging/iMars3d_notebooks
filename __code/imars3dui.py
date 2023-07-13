@@ -575,6 +575,9 @@ class Imars3dui:
 
     def export(self):
         working_dir = os.path.join(self.working_dir, "shared", "processed_data")
+        if not os.path.exists(working_dir):
+            working_dir = self.working_dir
+
         o_file_browser = FileFolderBrowser(working_dir=working_dir,
                                            next_function=self.export_data)
         list_folder_selected = o_file_browser.select_output_folder(instruction="Select output folder")
