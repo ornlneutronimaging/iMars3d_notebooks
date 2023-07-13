@@ -260,7 +260,7 @@ class Imars3dui:
         index_180_degree = np.where(minimum_value == abs_angles_minus_180)[0][0]
 
         rot_angles_sorted = rot_angles[:]
-        rot_angles_sorted.sorted()
+        rot_angles_sorted.sort()
         self.mean_delta_angle = np.mean([y - x for (x, y) in zip(rot_angles_sorted[:-1],
                                                             rot_angles_sorted[1:])])
 
