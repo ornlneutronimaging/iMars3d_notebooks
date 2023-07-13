@@ -203,6 +203,21 @@ class Imars3dui:
         plt.imshow(proj_norm_min)
         plt.colorbar()
 
+    def export_normalization(self):
+        working_dir = os.path.join(self.working_dir, "shared", "processed_data")
+        if not os.path.exists(working_dir):
+            working_dir = self.working_dir
+
+        o_file_browser = FileFolderBrowser(working_dir=working_dir,
+                                           next_function=self.export_normalized_data)
+        list_folder_selected = o_file_browser.select_output_folder(instruction="Select output folder")
+
+    def export_normalized_data(self, folder):
+        print(f"New folder will be created in {folder} and called {self.input_folder_base_name}_YYYYMMDDHHMM")
+        save_data(data=np.asarray(self.proj_norm),
+                  outputbase=folder,
+                  name=self.input_folder_base_name + "_normalized")
+
     def saving_beam_fluctuation_correction(self, background_region):
         self.background_region = background_region
 
