@@ -275,6 +275,24 @@ class Imars3dui:
                                    )
         display(self.beam_fluctuation_roi)
 
+    def export_normalization(self):
+        working_dir = os.path.join(self.working_dir, "shared", "processed_data")
+        if not os.path.exists(working_dir):
+            working_dir = self.working_dir
+
+        o_file_browser = FileFolderBrowser(working_dir=working_dir,
+                                           next_function=self.export_normalized_data)
+        list_folder_selected = o_file_browser.select_output_folder(instruction="Select output folder")
+
+    def export_normalized_data(self, folder):
+        print(f"New folder will be created in {folder} and called {self.input_folder_base_name}_YYYYMMDDHHMM")
+        save_data(data=np.asarray(self.proj_norm),
+                  outputbase=folder,
+                  name=self.input_folder_base_name + "_normalized")
+
+    def saving_beam_fluctuation_correction(self, background_region):
+        self.background_region = background_region
+
     def beam_fluctuation_correction(self):
         background_region = list(self.beam_fluctuation_roi.result)
 
@@ -328,9 +346,11 @@ class Imars3dui:
         index_0_degree = 0
         index_180_degree = np.where(minimum_value == abs_angles_minus_180)[0][0]
 
-        # self.mean_delta_angle = np.mean([y - x for (x, y) in zip(rot_angles_sorted[:-1],
-        #                                                     rot_angles_sorted[1:])])
-        #
+        rot_angles_sorted = rot_angles[:]
+        rot_angles_sorted.sort()
+        self.mean_delta_angle = np.mean([y - x for (x, y) in zip(rot_angles_sorted[:-1],
+                                                            rot_angles_sorted[1:])])
+
         # list_180_deg_pairs_idx = tilt.find_180_deg_pairs_idx(angles=self.rot_angles,
         #                                                      atol=self.mean_delta_angle)
         #
@@ -642,6 +662,9 @@ class Imars3dui:
 
     def export(self):
         working_dir = os.path.join(self.working_dir, "shared", "processed_data")
+        if not os.path.exists(working_dir):
+            working_dir = self.working_dir
+
         o_file_browser = FileFolderBrowser(working_dir=working_dir,
                                            next_function=self.export_data)
         list_folder_selected = o_file_browser.select_output_folder(instruction="Select output folder")
