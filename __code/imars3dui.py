@@ -159,7 +159,7 @@ class Imars3dui:
 
         fig.tight_layout()
 
-    def crop(self):
+    def crop_embedded(self):
         list_images = self.proj_raw
         integrated_image = np.mean(list_images, axis=0)
         height, width = np.shape(integrated_image)
@@ -197,8 +197,14 @@ class Imars3dui:
                                    )
         display(self.cropping)
 
-    def perform_cropping(self):
+    def saving_crop_region(self, crop_region):
+        self.crop_region = crop_region
+
+    def perform_embedded_cropping(self):
         crop_region = list(self.cropping.result)
+        self._crop_region(crop_region=crop_region)
+
+    def _crop_region(self, crop_region):
         print(f"Running crop ...")
         self.proj_crop = crop(arrays=self.proj_raw,
                               crop_limit=crop_region)
@@ -210,6 +216,10 @@ class Imars3dui:
         self.proj_crop_min = crop(arrays=self.proj_min,
                                   crop_limit=crop_region)
         print(f"cropping done!")
+
+    def perform_cropping(self):
+        crop_region = self.crop_region
+        self._crop_region(crop_region=crop_region)
 
     def gamma_filtering(self):
         print(f"Running gamma filtering ...")
@@ -238,7 +248,7 @@ class Imars3dui:
         plt.imshow(proj_norm_min)
         plt.colorbar()
 
-    def select_beam_fluctuation_roi(self):
+    def select_beam_fluctuation_roi_embedded(self):
         integrated_image = np.mean(self.proj_norm, axis=0)
         height, width = np.shape(integrated_image)
 
@@ -293,8 +303,16 @@ class Imars3dui:
     def saving_beam_fluctuation_correction(self, background_region):
         self.background_region = background_region
 
-    def beam_fluctuation_correction(self):
+    def beam_fluctuation_correction_embedded(self):
         background_region = list(self.beam_fluctuation_roi.result)
+        self._beam_fluctuation(background_region=background_region)
+
+    def beam_fluctuation_correction(self):
+        background_region = self.background_region
+
+        self._beam_fluctuation(background_region=background_region)
+
+    def _beam_fluctuation(self, background_region=None):
 
         # [top, left, bottom, right]
         roi = [background_region[2], background_region[0],
@@ -306,16 +324,16 @@ class Imars3dui:
         #     ncore=NCORE)
 
         self.proj_norm_beam_fluctuation = normalize_roi(
-            ct=self.proj_norm,
-            roi=roi,
-            max_workers=NCORE)
+                ct=self.proj_norm,
+                roi=roi,
+                max_workers=NCORE)
 
         fig, (ax0, ax1) = plt.subplots(nrows=2, ncols=1,
                                        num="Beam fluctuation",
                                        figsize=(5, 10))
         # before beam fluctuation
-        #proj_norm_min = np.min(proj_norm, axis=0)
-        #fig0 = ax0.imshow(proj_norm_min)
+        # proj_norm_min = np.min(proj_norm, axis=0)
+        # fig0 = ax0.imshow(proj_norm_min)
         fig0 = ax0.imshow(self.proj_norm[0])
         ax0.set_title("before")
         plt.colorbar(fig0, ax=ax0)
