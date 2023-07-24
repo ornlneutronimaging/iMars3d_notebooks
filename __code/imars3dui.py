@@ -633,6 +633,23 @@ class Imars3dui:
         t1 = timeit.default_timer()
         print(f"time= {t1 - t0:.2f}s")
 
+    def display_sinogram(self):
+
+        fig, axis = plt.subplots(num="sinogram", figsize=(5, 5), nrows=1, ncols=1)
+        sinogram_mlog = np.moveaxis(self.proj_strikes_removed, 1, 0)
+
+        def plot_sinogram(index):
+
+            axis.imshow(sinogram_mlog[index])
+            axis.set_title(f"Sinogram at slice #{index}")
+
+        plot_sinogram_ui = interactive(plot_sinogram,
+                                       index=widgets.IntSlider(min=0,
+                                                               max=len(sinogram_mlog),
+                                                               value=0))
+        display(plot_sinogram_ui)
+
+
     def rotation_center(self):
         print(f"Running rotation center ...")
         t0 = timeit.default_timer()
