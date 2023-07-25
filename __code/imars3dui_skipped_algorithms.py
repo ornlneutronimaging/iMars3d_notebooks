@@ -73,6 +73,8 @@ class Imars3dui:
     ob_raw = None
     dc_raw = None
 
+    mean_delta_angle = None
+
     def __init__(self, working_dir="./"):
         self.working_dir = os.path.join(working_dir, 'raw', default_input_folder[DataType.raw])
 
@@ -206,11 +208,11 @@ class Imars3dui:
 
     def _crop_region(self, crop_region):
         print(f"Running crop ...")
-        self.proj = crop(arrays=self.proj_raw,
+        self.proj = crop(arrays=self.proj,
                          crop_limit=crop_region)
-        self.ob = crop(arrays=self.ob_raw,
+        self.ob = crop(arrays=self.ob,
                        crop_limit=crop_region)
-        self.dc = crop(arrays=self.dc_raw,
+        self.dc = crop(arrays=self.dc,
                        crop_limit=crop_region)
 
         self.proj_min = crop(arrays=self.proj_min,
@@ -345,15 +347,18 @@ class Imars3dui:
         plt.colorbar(fig1, ax=ax1)
 
     def minus_log_and_display(self):
-        del self.proj_norm
         self.proj_mlog = tomopy.minus_log(self.proj_norm)
-        del self.proj_norm_before
+        try:
+            del self.proj_norm_before
+        except AttributeError:
+            pass
+
         del self.proj_norm
         plt.figure()
         plt.imshow(self.proj_mlog[0])
         plt.colorbar()
 
-    def find_0_180_degrees_files(self):
+    def calculate_mean_delta_angle(self):
         rot_angles = self.rot_angles
 
         # let's find where is index of the angle the closer to 180.0
@@ -367,7 +372,10 @@ class Imars3dui:
         rot_angles_sorted = rot_angles[:]
         rot_angles_sorted.sort()
         self.mean_delta_angle = np.mean([y - x for (x, y) in zip(rot_angles_sorted[:-1],
-                                                            rot_angles_sorted[1:])])
+                                                                 rot_angles_sorted[1:])])
+
+    def find_0_180_degrees_files(self):
+        self.calculate_mean_delta_angle()
 
         # list_180_deg_pairs_idx = tilt.find_180_deg_pairs_idx(angles=self.rot_angles,
         #                                                      atol=self.mean_delta_angle)
@@ -651,6 +659,10 @@ class Imars3dui:
 
 
     def rotation_center(self):
+
+        if not self.mean_delta_angle:
+            self.calculate_mean_delta_angle()
+
         print(f"Running rotation center ...")
         t0 = timeit.default_timer()
         self.rot_center = find_rotation_center(arrays=self.proj_mlog,
