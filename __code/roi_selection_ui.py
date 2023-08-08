@@ -140,7 +140,7 @@ class Interface(QMainWindow):
 
     def integrate_images(self):
         if self.mode == 'crop':
-            list_data_to_use = self.o_imars3dui.proj  # using all data
+            list_data_to_use = self.o_imars3dui.proj_raw  # using all data
         else:
             list_data_to_use = self.o_imars3dui.proj_norm
 
