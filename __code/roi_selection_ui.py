@@ -42,8 +42,9 @@ class Interface(QMainWindow):
 
         if display_info_message:
             display(HTML('<span style="font-size: 20px; color=green">Please be patient!</span>'))
-            display(HTML('<span style="font-size: 20px; color:blue">Check UI that popped up \
-                (maybe hidden behind this browser!)</span>'))
+            display(HTML('<span style="font-size: 20px; color:black">The user interface may show up</span>'
+                         '<span style="font-size: 20px; color:red"> behind </span>'
+                         '<span style="font-size: 20px; color:black">this browser!</span>'))
 
         if percentage_of_data_to_use is None:
             percentage_of_data_to_use = percentage_of_images_to_use_for_roi_selection
