@@ -7,6 +7,8 @@ from IPython.core.display import display
 from IPython.core.display import HTML
 from IPython.display import clear_output
 
+from __code.utilities.folder import find_first_real_dir
+
 list_instrument_per_facility = {'HFIR': ['CG1D'],
                                 'SNS': ['SNAP', 'VENUS']}
 
@@ -248,6 +250,6 @@ class System(object):
     @classmethod
     def get_working_dir(cls):
         if cls.working_dir:
-            return cls.working_dir
+            return find_first_real_dir(cls.working_dir)
         else:
-            return os.path.join(cls.start_path, cls.working_dir_ui.value)
+            return find_first_real_dir(os.path.join(cls.start_path, cls.working_dir_ui.value))

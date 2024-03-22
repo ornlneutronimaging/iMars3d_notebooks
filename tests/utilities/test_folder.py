@@ -21,3 +21,7 @@ class TestFolder(TestCase):
 
         first_existing_folder = folder.find_first_real_dir(start_dir=self.non_existing_folder)
         assert first_existing_folder == self.existing_folder
+
+    def test_start_path_with_str(self):
+        first_existing_folder = folder.find_first_real_dir(start_dir=str(self.non_existing_folder))
+        assert first_existing_folder == self.existing_folder
