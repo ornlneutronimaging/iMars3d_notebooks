@@ -74,7 +74,10 @@ class Imars3dui:
     dc_raw = None
 
     def __init__(self, working_dir="./"):
+        working_dir = self.find_first_real_dir(start_dir=working_dir)
         self.working_dir = os.path.join(working_dir, 'raw', default_input_folder[DataType.raw])
+
+
 
     def select_raw(self):
         self.select_folder(data_type=DataType.raw)
