@@ -9,6 +9,6 @@ debugger_instrument_folder = {'CG1D': "/Users/j35/HFIR/CG1D",
 #                               'SNAP': "/Volumes/JeanHardDrive/SNS/SNAP",
 #                               'VENUS': "/Volumes/JeanHardDrive/SNS/VENUS"}
 analysis_machine = 'bl10-analysis1.sns.gov'
-project_folder = 'IPTS-28170-test_ct_reconstruction'
+project_folder = 'IPTS-24863-test-imars3d-notebook'
 percentage_of_images_to_use_for_roi_selection = 0.05
 minimum_number_of_images_to_use_for_roi_selection = 10

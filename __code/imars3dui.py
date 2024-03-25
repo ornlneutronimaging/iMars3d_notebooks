@@ -354,6 +354,10 @@ class Imars3dui:
         plt.imshow(self.proj_mlog[0])
         plt.colorbar()
 
+    def remove_negative_values(self):
+        """remove all the intensity that are below 0"""
+        self.proj_mlog[self.proj_mlog < 0] = 0
+
     def find_0_180_degrees_files(self):
         rot_angles = self.rot_angles
 
@@ -635,21 +639,18 @@ class Imars3dui:
         print(f"time= {t1 - t0:.2f}s")
 
     def display_sinogram(self):
-
-        fig, axis = plt.subplots(num="sinogram", figsize=(5, 5), nrows=1, ncols=1)
-        sinogram_mlog = np.moveaxis(self.proj_strikes_removed, 1, 0)
+        self.sinogram_mlog = np.moveaxis(self.proj_strikes_removed, 1, 0)
 
         def plot_sinogram(index):
-
-            axis.imshow(sinogram_mlog[index])
+            fig, axis = plt.subplots(num="sinogram", figsize=(5, 5), nrows=1, ncols=1)
+            axis.imshow(self.sinogram_mlog[index])
             axis.set_title(f"Sinogram at slice #{index}")
 
         plot_sinogram_ui = interactive(plot_sinogram,
                                        index=widgets.IntSlider(min=0,
-                                                               max=len(sinogram_mlog),
+                                                               max=len(self.sinogram_mlog),
                                                                value=0))
         display(plot_sinogram_ui)
-
 
     def rotation_center(self):
         print(f"Running rotation center ...")
