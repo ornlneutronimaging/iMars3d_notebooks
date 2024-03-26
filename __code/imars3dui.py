@@ -18,7 +18,7 @@ from imars3d.backend.preparation.normalization import normalization
 from imars3d.backend.diagnostics import tilt
 # from imars3d.backend.dataio.data import _get_filelist_by_dir
 from imars3d.backend.diagnostics.rotation import find_rotation_center
-from imars3d.backend.corrections.ring_removal import remove_ring_artifact
+# from imars3d.backend.corrections.ring_removal import remove_ring_artifact
 from imars3d.backend.reconstruction import recon
 from imars3d.backend.dataio.data import save_data
 from imars3d.backend.corrections.intensity_fluctuation_correction import normalize_roi
@@ -222,17 +222,26 @@ class Imars3dui:
         crop_region = self.crop_region
         self._crop_region(crop_region=crop_region)
 
+    def gamma_filtering_options(self):
+        self.gamma_filtering_ui = widgets.Checkbox(value=False,
+                                                   description="Gamma filtering")
+        display(self.gamma_filtering_ui)
+
     def gamma_filtering(self):
-        print(f"Running gamma filtering ...")
-        t0 = timeit.default_timer()
-        self.proj_gamma = gamma_filter(arrays=self.proj_crop.astype(np.uint16),
-                                       selective_median_filter=False,
-                                       diff_tomopy=20,
-                                       max_workers=NCORE,
-                                       median_kernel=3)
-        del self.proj_crop
-        t1 = timeit.default_timer()
-        print(f"Gamma filtering done in {t1-t0:.2f}s")
+        if self.gamma_filtering_ui.value:
+            print(f"Running gamma filtering ...")
+            t0 = timeit.default_timer()
+            self.proj_gamma = gamma_filter(arrays=self.proj_crop.astype(np.uint16),
+                                           selective_median_filter=False,
+                                           diff_tomopy=20,
+                                           max_workers=NCORE,
+                                           median_kernel=3)
+            del self.proj_crop
+            t1 = timeit.default_timer()
+            print(f"Gamma filtering done in {t1-t0:.2f}s")
+        else:
+            self.proj_gamma = self.proj_crop
+            print("Gamma filtering skipped!")
 
     def normalization_and_display(self):
         print(f"Running normalization ...")
@@ -353,10 +362,6 @@ class Imars3dui:
         plt.figure()
         plt.imshow(self.proj_mlog[0])
         plt.colorbar()
-
-    def remove_negative_values(self):
-        """remove all the intensity that are below 0"""
-        self.proj_mlog[self.proj_mlog < 0] = 0
 
     def find_0_180_degrees_files(self):
         rot_angles = self.rot_angles
@@ -599,8 +604,8 @@ class Imars3dui:
 
         index_0_image = self.proj_tilt_corrected[self.index_0_degree]
         index_180_image_flipped = np.fliplr(self.proj_tilt_corrected[self.index_180_degree])
-        overlap_image = np.add(index_0_image, index_180_image_flipped)/2.
-        fig0 = ax.imshow(overlap_image)
+        self.overlap_image = np.add(index_0_image, index_180_image_flipped)/2.
+        fig0 = ax.imshow(self.overlap_image)
         plt.colorbar(fig0, ax=ax)
 
     # def tilt_correction_and_display(self):
@@ -628,15 +633,45 @@ class Imars3dui:
     #     ax1.set_title("180 degree (flipped)")
     #     plt.colorbar(fig1, ax=ax1)
 
+    def filter_options(self):
+        self.strikes_removal_option()
+        self.remove_negative_values_option()
+
+    def strikes_removal_option(self):
+        self.strikes_removal_ui = widgets.Checkbox(value=False,
+                                        description="Strikes removal")
+        display(self.strikes_removal_ui)
+
+    def remove_negative_values_option(self):
+        self.remove_negative_ui = widgets.Checkbox(value=False,
+                                description="Remove negative values")
+        display(self.remove_negative_ui)
+
+    def apply_filter_options(self):
+        self.strikes_removal()
+        self.remove_negative_values()
+
+    def remove_negative_values(self):
+        """remove all the intensity that are below 0"""
+        if self.remove_negative_ui.value:
+            self.proj_mlog[self.proj_mlog < 0] = 0
+            print(" Removed negative values!")
+        else:
+            print(" Skipped remove negative values!")
+
     def strikes_removal(self):
-        t0 = timeit.default_timer()
-        print("Running strikes removal ...")
-        self.proj_strikes_removed = remove_ring_artifact(arrays=self.proj_tilt_corrected,
-                                                         kernel_size=5,
-                                                         max_workers=NCORE)
-        print(" strikes removal done!")
-        t1 = timeit.default_timer()
-        print(f"time= {t1 - t0:.2f}s")
+        if self.strikes_removal_ui.value:
+            t0 = timeit.default_timer()
+            print("Running strikes removal ...")
+            self.proj_strikes_removed = remove_ring_artifact(arrays=self.proj_tilt_corrected,
+                                                             kernel_size=5,
+                                                             max_workers=NCORE)
+            print(" strikes removal done!")
+            t1 = timeit.default_timer()
+            print(f"time= {t1 - t0:.2f}s")
+        else:
+            self.proj_strikes_removed = self.proj_tilt_corrected
+            print(" Skipped strikes removal!")
 
     def display_sinogram(self):
         self.sinogram_mlog = np.moveaxis(self.proj_strikes_removed, 1, 0)

@@ -3,7 +3,7 @@ import getpass
 import glob
 import os
 from ipywidgets import widgets
-from IPython.core.display import display
+from IPython.display import display
 from IPython.core.display import HTML
 from IPython.display import clear_output
 
@@ -13,7 +13,7 @@ list_instrument_per_facility = {'HFIR': ['CG1D'],
                                 'SNS': ['SNAP', 'VENUS']}
 
 
-class System(object):
+class System:
 
     working_dir = ''
     start_path = ''
@@ -113,8 +113,10 @@ class System(object):
 
         if debugging:
             instrument = cls.get_instrument_selected()
-            start_path = config.debugger_instrument_folder[instrument]
-            cls.start_path = start_path
+            cls.start_path = "~/"
+            for path in config.debugger_instrument_folder[instrument]:
+                if os.path.exists(path):
+                    cls.start_path = start_path
 
         list_folders = sorted(glob.glob(os.path.join(start_path, '*')))
         short_list_folders = [os.path.basename(_folder) for _folder in list_folders if os.path.isdir(_folder)]
