@@ -15,3 +15,5 @@ analysis_machine = 'bl10-analysis1.sns.gov'
 project_folder = 'IPTS-24863-test-imars3d-notebook'
 percentage_of_images_to_use_for_roi_selection = 0.05
 minimum_number_of_images_to_use_for_roi_selection = 10
+DEFAULT_CROP_ROI = [50, 1550, 1150, 2000]
+DEFAULT_BACKROUND_ROI = [5, 300, 5, 600]

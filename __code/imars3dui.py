@@ -7,6 +7,8 @@ from ipywidgets import interactive
 import ipywidgets as widgets
 from IPython.display import display
 from IPython.core.display import HTML
+import algotom.rec.reconstruction as rec
+import multiprocessing as mp
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -26,11 +28,12 @@ from imars3d.backend.corrections.intensity_fluctuation_correction import normali
 from __code.tilt.direct_minimization import DirectMinimization
 from __code.tilt.phase_correlation import PhaseCorrelation
 from __code.tilt.use_center import UseCenter
+from __code import config
 
 import tomopy
 
 from __code.file_folder_browser import FileFolderBrowser
-from __code import DEFAULT_CROP_ROI, NCORE, DEFAULT_BACKROUND_ROI
+from __code import NCORE
 
 IN_PROGRESS = "Calculation in progress"
 DONE = "Done!"
@@ -60,8 +63,13 @@ class Imars3dui:
 
     input_data_folders = {}
     input_files = {}
-    crop_roi = DEFAULT_CROP_ROI
-    background_roi = DEFAULT_BACKROUND_ROI
+
+    if config.debugging:
+        crop_roi = config.DEFAULT_CROP_ROI
+        background_roi = config.DEFAULT_BACKROUND_ROI
+    else:
+        crop_roi = [None, None, None, None]
+        background_roi = [None, None, None, None]
 
     dict_tilt_values = {}
 
@@ -165,6 +173,11 @@ class Imars3dui:
         integrated_image = np.mean(list_images, axis=0)
         height, width = np.shape(integrated_image)
 
+        crop_left = self.crop_roi[0] if self.crop_roi[0] else 0
+        crop_right = self.crop_roi[1] if self.crop_roi[1] else width-1
+        crop_top = self.crop_roi[2] if self.crop_roi[2] else 0
+        crop_bottom = self.crop_roi[3] if self.crop_roi[3] else height-1
+
         def plot_crop(left, right, top, bottom):
 
             fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(5, 5))
@@ -181,19 +194,19 @@ class Imars3dui:
         self.cropping = interactive(plot_crop,
                                     left=widgets.IntSlider(min=0,
                                                            max=width - 1,
-                                                           value=0,
+                                                           value=crop_left,
                                                            continuous_update=True),
                                     right=widgets.IntSlider(min=0,
                                                             max=width - 1,
-                                                            value=width - 1,
+                                                            value=crop_right,
                                                             continuous_update=False),
                                     top=widgets.IntSlider(min=0,
                                                           max=height - 1,
-                                                          value=0,
+                                                          value=crop_top,
                                                           continuous_update=False),
                                     bottom=widgets.IntSlider(min=0,
                                                              max=height - 1,
-                                                             value=height - 1,
+                                                             value=crop_bottom,
                                                              continuous_update=False),
                                    )
         display(self.cropping)
@@ -262,6 +275,11 @@ class Imars3dui:
         integrated_image = np.mean(self.proj_norm, axis=0)
         height, width = np.shape(integrated_image)
 
+        left = self.background_roi[0] if self.background_roi[0] else 0
+        right = self.background_roi[1] if self.background_roi[1] else width-1
+        top = self.background_roi[2] if self.background_roi[2] else 0
+        bottom = self.background_roi[3] if self.background_roi[3] else height-1
+
         def plot_crop(left, right, top, bottom):
 
             fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(5, 5))
@@ -278,19 +296,19 @@ class Imars3dui:
         self.beam_fluctuation_roi = interactive(plot_crop,
                                     left=widgets.IntSlider(min=0,
                                                            max=width - 1,
-                                                           value=0,
+                                                           value=left,
                                                            continuous_update=True),
                                     right=widgets.IntSlider(min=0,
                                                             max=width - 1,
-                                                            value=width - 1,
+                                                            value=right,
                                                             continuous_update=False),
                                     top=widgets.IntSlider(min=0,
                                                           max=height - 1,
-                                                          value=0,
+                                                          value=top,
                                                           continuous_update=False),
                                     bottom=widgets.IntSlider(min=0,
                                                              max=height - 1,
-                                                             value=height - 1,
+                                                             value=bottom,
                                                              continuous_update=False),
                                    )
         display(self.beam_fluctuation_roi)
@@ -699,6 +717,63 @@ class Imars3dui:
         t1 = timeit.default_timer()
         print(f"rotation center found in {t1-t0:.2f}s")
         print(f" - value: {self.rot_center}")
+
+    # testing the reconstruction on a few slices
+    def define_slices_to_test_reconstruction(self):
+        height, width = np.shape(self.overlap_image)
+        nbr_slices = 4
+        step = height / (nbr_slices + 1)
+        slices = [k * step for k in np.arange(1, nbr_slices + 1)]
+
+        display(
+            HTML("<span style='color:blue'><b>Position of the slices you want to test the reconstruction with:</b>" +
+                 "<br></span><b>To add a new slice</b>, enter value to the right of the last slice defined"))
+
+        def display_image_and_slices(list_slices):
+            fig, axs = plt.subplots(num='Select slices to reconstruct')
+            fig.set_figwidth(15)
+            axs.imshow(self.overlap_image)
+            for _slice in list_slices:
+                axs.axhline(_slice, color='red', linestyle='--')
+
+            return list_slices
+
+        self.display_slices = interactive(display_image_and_slices,
+                                     list_slices=widgets.IntsInput(value=slices,
+                                                                   min=0,
+                                                                   max=height - 1))
+        display(self.display_slices)
+
+    def test_reconstruction(self):
+        list_slices = self.display_slices.result
+        rec_images = []
+        for num, idx in enumerate(list_slices):
+            rec_images.append(rec.gridrec_reconstruction(self.sinogram_mlog[idx],
+                                                         self.rot_center[0],
+                                                         angles=self.rot_angles,
+                                                         apply_log=False,
+                                                         ratio=1.0,
+                                                         filter_name='shepp',
+                                                         pad=100,
+                                                         ncore=mp.cpu_count()))
+
+        # display slices reconstructed here
+        def display_slices(slice_index):
+            fig, axs = plt.subplots(num="testing reconstruction", ncols=2, nrows=1)
+            fig.set_figwidth(15)
+
+            axs[0].imshow(rec_images[slice_index])
+            axs[0].set_title(f"Slice {list_slices[slice_index]}.")
+            axs[1].imshow(self.overlap_image)
+            axs[1].set_title(f"Integrated image and slice {list_slices[slice_index]} position.")
+
+            axs[1].axhline(list_slices[slice_index], color='red', linestyle='--')
+
+        display_test = interactive(display_slices,
+                                   slice_index=widgets.IntSlider(min=0,
+                                                                 max=len(list_slices) - 1,
+                                                                 continuous_update=True))
+        display(display_test)
 
     def reconstruction_and_display(self):
         t0 = timeit.default_timer()
