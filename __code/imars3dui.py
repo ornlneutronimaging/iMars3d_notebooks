@@ -20,7 +20,7 @@ from imars3d.backend.preparation.normalization import normalization
 from imars3d.backend.diagnostics import tilt
 # from imars3d.backend.dataio.data import _get_filelist_by_dir
 from imars3d.backend.diagnostics.rotation import find_rotation_center
-# from imars3d.backend.corrections.ring_removal import remove_ring_artifact
+from imars3d.backend.corrections.ring_removal import remove_ring_artifact
 from imars3d.backend.reconstruction import recon
 from imars3d.backend.dataio.data import save_data
 from imars3d.backend.corrections.intensity_fluctuation_correction import normalize_roi
@@ -755,7 +755,7 @@ class Imars3dui:
                                                          ratio=1.0,
                                                          filter_name='shepp',
                                                          pad=100,
-                                                         ncore=mp.cpu_count()))
+                                                         ncore=NCORE))
 
         # display slices reconstructed here
         def display_slices(slice_index):
@@ -774,6 +774,83 @@ class Imars3dui:
                                                                  max=len(list_slices) - 1,
                                                                  continuous_update=True))
         display(display_test)
+
+    def ring_removal_options(self):
+        self.ring_removal_ui = widgets.VBox([widgets.Checkbox(value=False,
+                                                              description="BM3D",
+                                                              disabled=True),
+                                             widgets.Checkbox(value=False,
+                                                              description="Tomopy (Vo)"),
+                                             widgets.Checkbox(value=False,
+                                                              description="Ketcham")],
+                                            layout={'width': 'max-content'},
+                                            )
+        display(self.ring_removal_ui)
+
+    def apply_ring_removal_options(self):
+
+        # bm3d
+        if self.ring_removal_ui.children[0].value:
+            t0 = timeit.default_timer()
+            print("Running strikes removal using BM3D ...")
+            import bm3d_streak_removal as bm3d
+            proj_mlog_bm3d = bm3d.extreme_streak_attenuation(self.proj_tilt_corrected)
+            self.proj_ring_removal_1 = bm3d.multiscale_streak_removal(proj_mlog_bm3d)
+            print(" strikes removal done!")
+            t1 = timeit.default_timer()
+            print(f"time= {t1 - t0:.2f}s")
+        else:
+            print("No strikes removal using BM3D")
+            self.proj_ring_removal_1 = self.proj_tilt_corrected
+
+        # tomopy, Vo
+        if self.ring_removal_ui.children[1].value:
+            t0 = timeit.default_timer()
+            print("Running strikes removal using Vo ...")
+            self.proj_ring_removal_2 = tomopy.remove_all_stripe(self.proj_ring_removal_1,
+                                                                ncore=NCORE)
+            print(" strikes removal done!")
+            t1 = timeit.default_timer()
+            print(f"time= {t1 - t0:.2f}s")
+        else:
+            print("No strikes removal using Vo")
+            self.proj_ring_removal_2 = self.proj_ring_removal_1
+
+        # ketcham
+        if self.ring_removal_ui.children[2].value:
+            t0 = timeit.default_timer()
+            print("Running strikes removal using Ketcham ...")
+            self.proj_strikes_removed = remove_ring_artifact(arrays=self.proj_ring_removal_2,
+                                                             kernel_size=5,
+                                                             max_workers=NCORE)
+            print(" strikes removal done!")
+            t1 = timeit.default_timer()
+            print(f"time= {t1 - t0:.2f}s")
+        else:
+            print("No strikes removal using Ketcham")
+            self.proj_ring_removal_3 = self.proj_ring_removal_2
+
+    def test_ring_removal(self):
+
+        after_sinogram_mlog = self.proj_ring_removal_3.astype(np.float32)
+        after_sinogram_mlog = np.moveaxis(after_sinogram_mlog, 1, 0)
+
+        def plot_test_ring_removal(index):
+            fig, axis = plt.subplots(num="sinogram", figsize=(15, 5), nrows=1, ncols=3)
+
+            axis[0].imshow(self.sinogram_mlog[index])
+            axis[0].set_title(f"Before ring removal")
+
+            axis[1].imshow(after_sinogram_mlog[index])
+            axis[1].set_title(f"After ring removal")
+
+            axis[2].imshow(after_sinogram_mlog[index] - self.sinogram_mlog[index])
+            axis[2].set_title(f"Difference")
+
+        plot_test_ui = interactive(plot_test_ring_removal,
+                                   index=widgets.IntSlider(min=0,
+                                                           max=len(self.sinogram_mlog)))
+        display(plot_test_ui)
 
     def reconstruction_and_display(self):
         t0 = timeit.default_timer()
