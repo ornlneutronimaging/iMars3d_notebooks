@@ -31,7 +31,10 @@ from imars3d.backend.reconstruction import recon
 from imars3d.backend.dataio.data import save_data
 from imars3d.backend.corrections.intensity_fluctuation_correction import normalize_roi
 
+from __code import DataType
 from __code.workflow.load import Load
+from __code.workflow.crop import Crop
+from __code.workflow.gamma_filtering import GammaFiltering
 
 from __code.tilt.direct_minimization import DirectMinimization
 from __code.tilt.phase_correlation import PhaseCorrelation
@@ -48,10 +51,10 @@ DONE = "Done!"
 QUEUE = "In queue"
 
 
-class DataType:
-    raw = 'raw'
-    ob = 'ob'
-    dc = 'dc'
+# class DataType:
+#     raw = 'raw'
+#     ob = 'ob'
+#     dc = 'dc'
 
 
 class TiltAlgorithms:
@@ -127,92 +130,32 @@ class Imars3dui:
     # CROP ===============================================================================================
 
     def crop_embedded(self):
-        list_images = self.proj_raw
-        integrated_image = np.mean(list_images, axis=0)
-        height, width = np.shape(integrated_image)
-
-        crop_left = self.crop_roi[0] if self.crop_roi[0] else 0
-        crop_right = self.crop_roi[1] if self.crop_roi[1] else width-1
-        crop_top = self.crop_roi[2] if self.crop_roi[2] else 0
-        crop_bottom = self.crop_roi[3] if self.crop_roi[3] else height-1
-
-        def plot_crop(left, right, top, bottom):
-
-            fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(5, 5))
-            ax.imshow(integrated_image)
-
-            ax.axvline(left, color='blue', linestyle='--')
-            ax.axvline(right, color='red', linestyle='--')
-
-            ax.axhline(top, color='blue', linestyle='--')
-            ax.axhline(bottom, color='red', linestyle='--')
-
-            return left, right, top, bottom
-
-        self.cropping = interactive(plot_crop,
-                                    left=widgets.IntSlider(min=0,
-                                                           max=width - 1,
-                                                           value=crop_left,
-                                                           continuous_update=True),
-                                    right=widgets.IntSlider(min=0,
-                                                            max=width - 1,
-                                                            value=crop_right,
-                                                            continuous_update=False),
-                                    top=widgets.IntSlider(min=0,
-                                                          max=height - 1,
-                                                          value=crop_top,
-                                                          continuous_update=False),
-                                    bottom=widgets.IntSlider(min=0,
-                                                             max=height - 1,
-                                                             value=crop_bottom,
-                                                             continuous_update=False),
-                                   )
-        display(self.cropping)
+        o_crop = Crop(parent=self)
+        o_crop.crop_embedded()
 
     def saving_crop_region(self, crop_region):
         self.crop_region = crop_region
 
     def perform_embedded_cropping(self):
         crop_region = list(self.cropping.result)
-        self._crop_region(crop_region=crop_region)
-
-    def _crop_region(self, crop_region):
-        print(f"Running crop ...")
-        self.proj_crop = crop(arrays=self.proj_raw,
-                              crop_limit=crop_region)
-        self.ob_crop = crop(arrays=self.ob_raw,
-                            crop_limit=crop_region)
-        self.dc_crop = crop(arrays=self.dc_raw,
-                            crop_limit=crop_region)
-
-        self.proj_crop_min = crop(arrays=self.proj_min,
-                                  crop_limit=crop_region)
-        print(f"cropping done!")
+        o_crop = Crop(parent=self)
+        o_crop.crop_region(crop_region)
 
     def perform_cropping(self):
         crop_region = self.crop_region
         self._crop_region(crop_region=crop_region)
 
+    # GAMMA_FILTERING =====================================================================================
+
     def gamma_filtering_options(self):
-        self.gamma_filtering_ui = widgets.Checkbox(value=False,
-                                                   description="Gamma filtering")
-        display(self.gamma_filtering_ui)
+        o_gamma = GammaFiltering(parent=self)
+        o_gamma.gamma_filtering_options()
 
     def gamma_filtering(self):
-        if self.gamma_filtering_ui.value:
-            print(f"Running gamma filtering ...")
-            t0 = timeit.default_timer()
-            self.proj_gamma = gamma_filter(arrays=self.proj_crop.astype(np.uint16),
-                                           selective_median_filter=False,
-                                           diff_tomopy=20,
-                                           max_workers=NCORE,
-                                           median_kernel=3)
-            del self.proj_crop
-            t1 = timeit.default_timer()
-            print(f"Gamma filtering done in {t1-t0:.2f}s")
-        else:
-            self.proj_gamma = self.proj_crop
-            print("Gamma filtering skipped!")
+        o_gamma = GammaFiltering(parent=self)
+        o_gamma.gamma_filtering()
+
+    # NORMAlIZATION =====================================================================================
 
     def normalization_and_display(self):
         print(f"Running normalization ...")
