@@ -31,6 +31,8 @@ from imars3d.backend.reconstruction import recon
 from imars3d.backend.dataio.data import save_data
 from imars3d.backend.corrections.intensity_fluctuation_correction import normalize_roi
 
+from __code.workflow.load import Load
+
 from __code.tilt.direct_minimization import DirectMinimization
 from __code.tilt.phase_correlation import PhaseCorrelation
 from __code.tilt.use_center import UseCenter
@@ -91,55 +93,24 @@ class Imars3dui:
         # working_dir = self.find_first_real_dir(start_dir=working_dir)
         self.working_dir = os.path.join(working_dir, 'raw', default_input_folder[DataType.raw])
 
+    # SELECT INPUT DATA ===============================================================================================
     def select_raw(self):
-        self.select_folder(data_type=DataType.raw)
+        o_load = Load(parent=self)
+        o_load.select_folder(data_type=DataType.raw)
 
     def select_ob(self):
-        self.select_folder(data_type=DataType.ob,
-                           multiple_flag=True)
+        o_load = Load(parent=self)
+        o_load.select_folder(data_type=DataType.ob,
+                             multiple_flag=True)
 
     def select_dc(self):
-        self.select_folder(data_type=DataType.dc,
-                           multiple_flag=True)
-
-    def select_folder(self, data_type=DataType.raw, multiple_flag=False):
-
-        self.current_data_type = data_type
-
-        if not os.path.exists(self.working_dir):
-            self.working_dir = os.path.abspath(os.path.expanduser("~"))
-
-        o_file_browser = FileFolderBrowser(working_dir=self.working_dir,
-                                           next_function=self.data_selected)
-        o_file_browser.select_input_folder(instruction=f"Select Folder of {data_type}",
-                                           multiple_flag=multiple_flag)
+        o_load = Load(parent=self)
+        o_load.select_folder(data_type=DataType.dc,
+                             multiple_flag=True)
 
     def data_selected(self, list_folders):
-        self.input_data_folders[self.current_data_type] = list_folders
-
-        if self.current_data_type == DataType.raw:
-            list_folders = [os.path.abspath(list_folders)]
-            self.working_dir = os.path.dirname(os.path.dirname(list_folders[0]))  # default folder is the parent folder of sample
-        else:
-            list_folders = [os.path.abspath(_folder) for _folder in list_folders]
-
-        list_files = Imars3dui.retrieve_list_of_files(list_folders)
-        self.input_files[self.current_data_type] = list_files
-
-        if self.current_data_type == DataType.raw:
-            self.input_folder_base_name = os.path.basename(list_folders[0])
-
-        print(f"{self.current_data_type} folder selected: {list_folders} with {len(list_files)} files)")
-
-    @staticmethod
-    def retrieve_list_of_files(list_folders):
-        list_files = []
-        for _folder in list_folders:
-            _tiff_files = glob.glob(os.path.join(_folder, "*.tif*"))
-            list_files = [*list_files, *_tiff_files]
-
-        list_files.sort()
-        return list_files
+        o_load = Load(parent=self)
+        o_load.data_selected(list_folders=list_folders)
 
     def saving_list_of_files(self):
         raw_folder = self.input_data_folders[DataType.raw]
@@ -150,29 +121,10 @@ class Imars3dui:
         self.input_files[DataType.dc] = self.retrieve_list_of_files(dc_folder)
 
     def load_and_display_data(self):
-        self.proj_raw, self.ob_raw, self.dc_raw, self.rot_angles = load_data(ct_files=self.input_files[DataType.raw],
-                                                                             ob_files=self.input_files[DataType.ob],
-                                                                             dc_files=self.input_files[DataType.dc])
+        o_load = Load(parent=self)
+        o_load.load_and_display_data()
 
-        fig, (ax0, ax1, ax2) = plt.subplots(nrows=3, ncols=1, figsize=(5, 9))
-        proj_min = np.min(self.proj_raw, axis=0)
-        self.proj_min = proj_min
-        ob_max = np.max(self.ob_raw, axis=0)
-        dc_max = np.max(self.dc_raw, axis=0)
-
-        plt0 = ax0.imshow(proj_min)
-        fig.colorbar(plt0, ax=ax0)
-        ax0.set_title("np.min(proj_raw)")
-
-        plt1 = ax1.imshow(ob_max)
-        fig.colorbar(plt1, ax=ax1)
-        ax1.set_title("np.max(ob_raw)")
-
-        plt2 = ax2.imshow(dc_max)
-        fig.colorbar(plt2, ax=ax2)
-        ax2.set_title("np.max(dc_raw)")
-
-        fig.tight_layout()
+    # CROP ===============================================================================================
 
     def crop_embedded(self):
         list_images = self.proj_raw

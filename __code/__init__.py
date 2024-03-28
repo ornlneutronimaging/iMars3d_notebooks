@@ -11,3 +11,7 @@ def load_ui(ui_filename, baseinstance):
     return loadUi(ui_filename, baseinstance=baseinstance)
 
 
+class DataType:
+    raw = 'raw'
+    ob = 'ob'
+    dc = 'dc'
