@@ -15,3 +15,16 @@ class DataType:
     raw = 'raw'
     ob = 'ob'
     dc = 'dc'
+
+
+IN_PROGRESS = "Calculation in progress"
+DONE = "Done!"
+QUEUE = "In queue"
+
+
+class TiltAlgorithms:
+    phase_correlation = "phase correlation"
+    direct_minimization = "direct minimization"
+    use_center = "use center"
+    scipy_minimizer = "SciPy minimizer"
+    user = "user"
