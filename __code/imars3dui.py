@@ -20,7 +20,13 @@ from imars3d.backend.preparation.normalization import normalization
 from imars3d.backend.diagnostics import tilt
 # from imars3d.backend.dataio.data import _get_filelist_by_dir
 from imars3d.backend.diagnostics.rotation import find_rotation_center
-from imars3d.backend.corrections.ring_removal import remove_ring_artifact
+
+try:
+    from imars3d.backend.corrections.ring_removal import remove_ring_artifact
+    enable_remove_ring_artifact = True
+except OSError:
+    enable_remove_ring_artifact = False
+
 from imars3d.backend.reconstruction import recon
 from imars3d.backend.dataio.data import save_data
 from imars3d.backend.corrections.intensity_fluctuation_correction import normalize_roi
@@ -267,51 +273,61 @@ class Imars3dui:
         print(f"normalization done in {t1-t0:.2f}s")
 
         plt.figure()
-        proj_norm_min = np.min(self.proj_norm, axis=0)
-        plt.imshow(proj_norm_min)
+        self.proj_norm_min = np.min(self.proj_norm, axis=0)
+        plt.imshow(self.proj_norm_min)
         plt.colorbar()
 
-    def select_beam_fluctuation_roi_embedded(self):
-        integrated_image = np.mean(self.proj_norm, axis=0)
-        height, width = np.shape(integrated_image)
+    def beam_fluctuation_correction_option(self):
+        self.beam_fluctuation_ui = widgets.Checkbox(value=False,
+                                                    description="Beam fluctuation correction")
+        display(self.beam_fluctuation_ui)
 
-        left = self.background_roi[0] if self.background_roi[0] else 0
-        right = self.background_roi[1] if self.background_roi[1] else width-1
-        top = self.background_roi[2] if self.background_roi[2] else 0
-        bottom = self.background_roi[3] if self.background_roi[3] else height-1
+    def apply_select_beam_fluctuation(self):
 
-        def plot_crop(left, right, top, bottom):
+        if self.beam_fluctuation_ui.value:
+            integrated_image = np.mean(self.proj_norm, axis=0)
+            height, width = np.shape(integrated_image)
 
-            fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(5, 5))
-            ax.imshow(integrated_image)
+            left = self.background_roi[0] if self.background_roi[0] else 0
+            right = self.background_roi[1] if self.background_roi[1] else width-1
+            top = self.background_roi[2] if self.background_roi[2] else 0
+            bottom = self.background_roi[3] if self.background_roi[3] else height-1
 
-            ax.axvline(left, color='blue', linestyle='--')
-            ax.axvline(right, color='red', linestyle='--')
+            def plot_crop(left, right, top, bottom):
 
-            ax.axhline(top, color='blue', linestyle='--')
-            ax.axhline(bottom, color='red', linestyle='--')
+                fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(5, 5))
+                ax.imshow(integrated_image)
 
-            return left, right, top, bottom
+                ax.axvline(left, color='blue', linestyle='--')
+                ax.axvline(right, color='red', linestyle='--')
 
-        self.beam_fluctuation_roi = interactive(plot_crop,
-                                    left=widgets.IntSlider(min=0,
-                                                           max=width - 1,
-                                                           value=left,
-                                                           continuous_update=True),
-                                    right=widgets.IntSlider(min=0,
-                                                            max=width - 1,
-                                                            value=right,
-                                                            continuous_update=False),
-                                    top=widgets.IntSlider(min=0,
-                                                          max=height - 1,
-                                                          value=top,
-                                                          continuous_update=False),
-                                    bottom=widgets.IntSlider(min=0,
-                                                             max=height - 1,
-                                                             value=bottom,
-                                                             continuous_update=False),
-                                   )
-        display(self.beam_fluctuation_roi)
+                ax.axhline(top, color='blue', linestyle='--')
+                ax.axhline(bottom, color='red', linestyle='--')
+
+                return left, right, top, bottom
+
+            self.beam_fluctuation_roi = interactive(plot_crop,
+                                        left=widgets.IntSlider(min=0,
+                                                               max=width - 1,
+                                                               value=left,
+                                                               continuous_update=True),
+                                        right=widgets.IntSlider(min=0,
+                                                                max=width - 1,
+                                                                value=right,
+                                                                continuous_update=False),
+                                        top=widgets.IntSlider(min=0,
+                                                              max=height - 1,
+                                                              value=top,
+                                                              continuous_update=False),
+                                        bottom=widgets.IntSlider(min=0,
+                                                                 max=height - 1,
+                                                                 value=bottom,
+                                                                 continuous_update=False),
+                                       )
+            display(self.beam_fluctuation_roi)
+
+        else:
+            self.proj_norm_beam_fluctuation = self.proj_norm
 
     def export_normalization(self):
         working_dir = os.path.join(self.working_dir, "shared", "processed_data")
@@ -332,12 +348,12 @@ class Imars3dui:
         self.background_region = background_region
 
     def beam_fluctuation_correction_embedded(self):
-        background_region = list(self.beam_fluctuation_roi.result)
-        self._beam_fluctuation(background_region=background_region)
+        if self.beam_fluctuation_ui.value:
+            background_region = list(self.beam_fluctuation_roi.result)
+            self._beam_fluctuation(background_region=background_region)
 
     def beam_fluctuation_correction(self):
         background_region = self.background_region
-
         self._beam_fluctuation(background_region=background_region)
 
     def _beam_fluctuation(self, background_region=None):
@@ -500,7 +516,7 @@ class Imars3dui:
         self.direct_minimization_value = line1.children[1]
         direct_minimization_status = line1.children[3]
 
-        line2 = widgets.HBox([widgets.Checkbox(value=False,
+        line2 = widgets.HBox([widgets.Checkbox(value=True,
                                                description="Phase correlation"),
                               widgets.Label("N/A",
                                             layout=widgets.Layout(width="100px")),
@@ -513,7 +529,7 @@ class Imars3dui:
         self.phase_correlation_value = line2.children[1]
         phase_correlation_status = line2.children[3]
 
-        line3 = widgets.HBox([widgets.Checkbox(value=False,
+        line3 = widgets.HBox([widgets.Checkbox(value=True,
                                                description="Use center"),
                               widgets.Label("N/A",
                                             layout=widgets.Layout(width="100px")),
@@ -527,7 +543,7 @@ class Imars3dui:
         use_center_status = line3.children[3]
 
         # scipy minimizer
-        line4 = widgets.HBox([widgets.Checkbox(value=False,
+        line4 = widgets.HBox([widgets.Checkbox(value=True,
                                                description="Scipy minimizer"),
                               widgets.Label("N/A",
                                             layout=widgets.Layout(width="100px")),
@@ -553,11 +569,11 @@ class Imars3dui:
         self.tilt_checkbox5 = line5.children[0]
         self.user_value = line5.children[1]
 
-        self.tilt_checkbox1.observe(self.tilt_checkbox1_changed, names="value")
-        self.tilt_checkbox2.observe(self.tilt_checkbox2_changed, names="value")
-        self.tilt_checkbox3.observe(self.tilt_checkbox3_changed, names="value")
-        self.tilt_checkbox4.observe(self.tilt_checkbox4_changed, names="value")
-        self.tilt_checkbox5.observe(self.tilt_checkbox5_changed, names="value")
+        # self.tilt_checkbox1.observe(self.tilt_checkbox1_changed, names="value")
+        # self.tilt_checkbox2.observe(self.tilt_checkbox2_changed, names="value")
+        # self.tilt_checkbox3.observe(self.tilt_checkbox3_changed, names="value")
+        # self.tilt_checkbox4.observe(self.tilt_checkbox4_changed, names="value")
+        # self.tilt_checkbox5.observe(self.tilt_checkbox5_changed, names="value")
 
         vertical_layout = widgets.VBox([line1, line2, line3, line4, line5])
         display(vertical_layout)
@@ -657,12 +673,13 @@ class Imars3dui:
 
     def strikes_removal_option(self):
         self.strikes_removal_ui = widgets.Checkbox(value=False,
-                                        description="Strikes removal")
+                                                   disabled= not enable_remove_ring_artifact,
+                                                   description="Strikes removal")
         display(self.strikes_removal_ui)
 
     def remove_negative_values_option(self):
         self.remove_negative_ui = widgets.Checkbox(value=False,
-                                description="Remove negative values")
+                                                   description="Remove negative values")
         display(self.remove_negative_ui)
 
     def apply_filter_options(self):
@@ -695,7 +712,7 @@ class Imars3dui:
         self.sinogram_mlog = np.moveaxis(self.proj_strikes_removed, 1, 0)
 
         def plot_sinogram(index):
-            fig, axis = plt.subplots(num="sinogram", figsize=(5, 5), nrows=1, ncols=1)
+            fig, axis = plt.subplots(num="sinogram", figsize=(10, 10), nrows=1, ncols=1)
             axis.imshow(self.sinogram_mlog[index])
             axis.set_title(f"Sinogram at slice #{index}")
 
@@ -836,7 +853,7 @@ class Imars3dui:
         after_sinogram_mlog = np.moveaxis(after_sinogram_mlog, 1, 0)
 
         def plot_test_ring_removal(index):
-            fig, axis = plt.subplots(num="sinogram", figsize=(15, 5), nrows=1, ncols=3)
+            fig, axis = plt.subplots(num="sinogram", figsize=(15, 10), nrows=1, ncols=3)
 
             axis[0].imshow(self.sinogram_mlog[index])
             axis[0].set_title(f"Before ring removal")
@@ -851,6 +868,11 @@ class Imars3dui:
                                    index=widgets.IntSlider(min=0,
                                                            max=len(self.sinogram_mlog)))
         display(plot_test_ui)
+
+    # Reconstruction
+    def testing_reconstruction_algorithm(self):
+        pass
+
 
     def reconstruction_and_display(self):
         t0 = timeit.default_timer()
