@@ -28,3 +28,10 @@ class TiltAlgorithms:
     use_center = "use center"
     scipy_minimizer = "SciPy minimizer"
     user = "user"
+
+
+class TiltTestKeys:
+    raw_3d = 'raw_3d'
+    sinogram = 'sinogram'
+    center_of_rotation = 'center_of_rotation'
+    reconstructed = 'reconstructed'

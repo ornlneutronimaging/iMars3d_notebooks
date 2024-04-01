@@ -1,17 +1,23 @@
 import numpy as np
 import os
+import copy
 import ipywidgets as widgets
 from IPython.display import display
 from IPython.core.display import HTML
 import matplotlib.pyplot as plt
 from ipywidgets import interactive
+import algotom.rec.reconstruction as rec
 
 from imars3d.backend.diagnostics import tilt as diagnostics_tilt
+from imars3d.backend.diagnostics.rotation import find_rotation_center
 
 from __code import IN_PROGRESS, QUEUE, DONE
-from __code import TiltAlgorithms
+from __code import TiltAlgorithms, TiltTestKeys
 from __code.parent import Parent
 from __code import DataType
+from __code import NCORE
+
+from __code.utilities.math import convert_deg_in_rad
 
 from __code.tilt.direct_minimization import DirectMinimization
 from __code.tilt.phase_correlation import PhaseCorrelation
@@ -19,6 +25,18 @@ from __code.tilt.use_center import UseCenter
 
 
 class Tilt(Parent):
+
+    test_dict = {TiltTestKeys.raw_3d: None,
+                 TiltTestKeys.sinogram: None,
+                 TiltTestKeys.center_of_rotation: None,
+                 TiltTestKeys.reconstructed: {},
+                 }
+    test_tilt_reconstruction = {TiltAlgorithms.phase_correlation: copy.deepcopy(test_dict),
+                                TiltAlgorithms.direct_minimization: copy.deepcopy(test_dict),
+                                TiltAlgorithms.use_center: copy.deepcopy(test_dict),
+                                TiltAlgorithms.scipy_minimizer: copy.deepcopy(test_dict),
+                                TiltAlgorithms.user: copy.deepcopy(test_dict),
+                               }
 
     def find_0_180_degrees_files(self):
         rot_angles = self.parent.rot_angles
@@ -305,9 +323,9 @@ class Tilt(Parent):
             list_options.append(TiltAlgorithms.direct_minimization)
             print(f"Running {TiltAlgorithms.direct_minimization} ...", end=" ")
             tilt_value = self.parent.dict_tilt_values[TiltAlgorithms.direct_minimization]
-            self.parent.test_tilt_reconstruction[TiltAlgorithms.direct_minimization] = (
-                diagnostics_tilt.apply_tilt_correction(arrays=self.parent.proj_mlog,
-                                                       tilt=tilt_value))
+            self.test_tilt_reconstruction[TiltAlgorithms.direct_minimization][TiltTestKeys.raw_3d] = \
+                (diagnostics_tilt.apply_tilt_correction(arrays=self.parent.proj_mlog,
+                                                        tilt=tilt_value))
             print("Done!")
 
         progress_bar.value += 1
@@ -316,9 +334,9 @@ class Tilt(Parent):
             list_options.append(TiltAlgorithms.phase_correlation)
             print(f"Running {TiltAlgorithms.phase_correlation} ...", end=" ")
             tilt_value = self.parent.dict_tilt_values[TiltAlgorithms.phase_correlation]
-            self.parent.test_tilt_reconstruction[TiltAlgorithms.phase_correlation] = (
+            self.test_tilt_reconstruction[TiltAlgorithms.phase_correlation][TiltTestKeys.raw_3d] = \
                 diagnostics_tilt.apply_tilt_correction(arrays=self.parent.proj_mlog,
-                                                       tilt=tilt_value))
+                                                       tilt=tilt_value)
             print(f"Done!")
         progress_bar.value += 1
 
@@ -326,9 +344,9 @@ class Tilt(Parent):
             list_options.append(TiltAlgorithms.use_center)
             print(f"Running {TiltAlgorithms.use_center} ...", end=" ")
             tilt_value = self.parent.dict_tilt_values[TiltAlgorithms.use_center]
-            self.parent.test_tilt_reconstruction[TiltAlgorithms.use_center] = (
-                diagnostics_tilt.apply_tilt_correction(arrays=self.parent.proj_mlog,
-                                                       tilt=tilt_value))
+            self.test_tilt_reconstruction[TiltAlgorithms.use_center][TiltTestKeys.raw_3d] = \
+            diagnostics_tilt.apply_tilt_correction(arrays=self.parent.proj_mlog,
+                                                       tilt=tilt_value)
             print(f"Done!")
         progress_bar.value += 1
 
@@ -336,7 +354,7 @@ class Tilt(Parent):
             list_options.append(TiltAlgorithms.scipy_minimizer)
             print(f"Running {TiltAlgorithms.scipy_minimizer} ...", end=" ")
             tilt_value = self.parent.dict_tilt_values[TiltAlgorithms.scipy_minimizer]
-            self.parent.test_tilt_reconstruction[TiltAlgorithms.scipy_minimizer] = (
+            self.test_tilt_reconstruction[TiltAlgorithms.scipy_minimizer][TiltTestKeys.raw_3d] = (
                 diagnostics_tilt.apply_tilt_correction(arrays=self.parent.proj_mlog,
                                                        tilt=tilt_value))
             print(f"Done!")
@@ -346,7 +364,7 @@ class Tilt(Parent):
             list_options.append(TiltAlgorithms.user)
             print(f"Running {TiltAlgorithms.user} ...", end=" ")
             tilt_value = self.parent.user_value.value
-            self.parent.test_tilt_reconstruction[TiltAlgorithms.user] = (
+            self.test_tilt_reconstruction[TiltAlgorithms.user][TiltTestKeys.raw_3d] = (
                 diagnostics_tilt.apply_tilt_correction(arrays=self.parent.proj_mlog,
                                                        tilt=tilt_value))
             print(f"Done!")
@@ -357,43 +375,92 @@ class Tilt(Parent):
 
     def perform_reconstruction_on_selected_data_sets(self):
 
-        # convert each array (after tilt applied to it) to sinograms
+        slices_indexes = self.reconstruct_slices.result
 
-        # calculate for each the center of rotation
+        # convert angles in rad
+        self.parent.rot_angles_rad = self.parent.rot_angles
 
-        # for each, reconstruct with only selected slices
+        for key in self.test_tilt_reconstruction.keys():
 
-        # display the 2 slices next to each other and widget to select which
-        # tilt algo/value used
+            value = self.test_tilt_reconstruction[key][TiltTestKeys.raw_3d]
+            if value is None:
+                continue
 
+            # convert each array (after tilt applied to it) to sinograms
+            sinogram = np.moveaxis(value, 1, 0)
+            self.test_tilt_reconstruction[key][TiltTestKeys.sinogram] = sinogram
 
+            # calculate for each the center of rotation
+            print(f"{np.shape(sinogram) =}")
+            rot_center = find_rotation_center(arrays=sinogram,
+                                               angles=self.parent.rot_angles,
+                                               num_pairs=-1,
+                                               in_degrees=True,
+                                               atol_deg=self.parent.mean_delta_angle,
+                                               )
+            self.test_tilt_reconstruction[key][TiltTestKeys.center_of_rotation] = rot_center
 
+            # reconstruct with only selected slices
+            for _slice_index in slices_indexes:
+                print(f"{np.shape(sinogram[_slice_index]) =}")
+                _rec_img = rec.gridrec_reconstruction(sinogram[_slice_index],
+                                                      rot_center[0],
+                                                      angles=self.parent.rot_angles_rad,
+                                                      apply_log=False,
+                                                      ratio=1.0,
+                                                      filter_name='shepp',
+                                                      pad=100,
+                                                      ncore=NCORE)
+                self.test_tilt_reconstruction[key][TiltTestKeys.reconstructed][_slice_index] = _rec_img
 
-
-
-    def display_results(self):
+    def display_test_results(self):
 
         if len(self.list_options) == 0:
             return
 
-        slices_indexes = self.reconstruct_slices
+        slices_indexes = self.reconstruct_slices.result
+        min_value = 10
+        max_value = -10
+        for _option in self.list_options:
+            _min = np.min(self.test_tilt_reconstruction[self.list_options[0]][TiltTestKeys.reconstructed][slices_indexes[0]])
+            _max = np.max(self.test_tilt_reconstruction[self.list_options[0]][TiltTestKeys.reconstructed][slices_indexes[0]])
+            min_value = _min if _min < min_value else min_value
+            max_value = _max if _max > max_value else max_value
+
+            _min = np.min(self.test_tilt_reconstruction[self.list_options[0]][TiltTestKeys.reconstructed][slices_indexes[1]])
+            _max = np.max(self.test_tilt_reconstruction[self.list_options[0]][TiltTestKeys.reconstructed][slices_indexes[1]])
+            min_value = _min if _min < min_value else min_value
+            max_value = _max if _max > max_value else max_value
+
+        print(f"{min_value =}")
+        print(f"{max_value =}")
 
         if len(self.list_options) > 1:
 
-            def plot_comparisons(value):
+            def plot_comparisons(algo_selected, color_range):
 
-                print(f"{value =}")
-                fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(10, 5))
+                slice1 = self.reconstruct_slices.result[0]
+                fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(15, 10))
 
-                slice1 = self.parent
+                ax[0].imshow(
+                    self.test_tilt_reconstruction[algo_selected][
+                        TiltTestKeys.reconstructed][slice1],
+                vmin=color_range[0],
+                vmax=color_range[1])
 
+                slice2 = self.reconstruct_slices.result[1]
+                ax[1].imshow(
+                    self.test_tilt_reconstruction[algo_selected][
+                        TiltTestKeys.reconstructed][slice2],
+                vmin=color_range[0],
+                vmax=color_range[1])
 
             test_tilt = interactive(plot_comparisons,
-                                    value=widgets.ToggleButtons(options=self.list_options),
+                                    algo_selected=widgets.ToggleButtons(options=self.list_options),
+                                    color_range=widgets.FloatRangeSlider(value=[min_value, max_value],
+                                                                         min=min_value,
+                                                                         max=max_value,
+                                                                         step=0.00001,
+                                                                         )
                                     )
             display(test_tilt)
-
-
-
-
-

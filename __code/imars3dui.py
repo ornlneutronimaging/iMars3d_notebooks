@@ -60,6 +60,9 @@ class Imars3dui:
     input_data_folders = {}
     input_files = {}
 
+    rot_angles_rad = None
+    rot_angles_deg = None
+
     test_tilt_reconstruction = {TiltAlgorithms.phase_correlation: None,
                                 TiltAlgorithms.direct_minimization: None,
                                 TiltAlgorithms.use_center: None,
@@ -85,6 +88,8 @@ class Imars3dui:
     proj_raw = None
     ob_raw = None
     dc_raw = None
+
+    o_tilt = None
 
     def __init__(self, working_dir="./"):
         # working_dir = self.find_first_real_dir(start_dir=working_dir)
@@ -193,8 +198,8 @@ class Imars3dui:
         o_tilt.find_0_180_degrees_files()
 
     def calculate_tilt(self):
-        o_tilt = Tilt(parent=self)
-        o_tilt.calculate_tilt()
+        self.o_tilt = Tilt(parent=self)
+        self.o_tilt.calculate_tilt()
 
     def apply_tilt_and_display(self):
         o_tilt = Tilt(parent=self)
@@ -202,13 +207,14 @@ class Imars3dui:
         o_tilt.display_tilt()
 
     def test_tilt_slices_selection(self):
-        o_tilt = Tilt(parent=self)
-        o_tilt.test_slices_selection()
+        self.o_tilt.test_slices_selection()
 
     def testing_tilt_on_selected_algorithms(self):
-        o_tilt = Tilt(parent=self)
-        o_tilt.apply_tilt_using_selected_algorithms()
-        o_tilt.perform_reconstruction_on_selected_data_sets()
+        self.o_tilt.apply_tilt_using_selected_algorithms()
+        self.o_tilt.perform_reconstruction_on_selected_data_sets()
+        self.o_tilt.display_test_results()
+
+
 
 
 
