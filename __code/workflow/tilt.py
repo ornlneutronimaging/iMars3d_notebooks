@@ -355,6 +355,17 @@ class Tilt(Parent):
         progress_bar.close()
         self.list_options = list_options
 
+    def perform_reconstruction_on_selected_data_sets(self):
+
+        # convert each array (after tilt applied to it) to sinograms
+
+        # calculate for each the center of rotation
+
+        # for each, reconstruct with only selected slices
+
+        # display the 2 slices next to each other and widget to select which
+        # tilt algo/value used
+
 
 
 

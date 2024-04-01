@@ -208,6 +208,7 @@ class Imars3dui:
     def testing_tilt_on_selected_algorithms(self):
         o_tilt = Tilt(parent=self)
         o_tilt.apply_tilt_using_selected_algorithms()
+        o_tilt.perform_reconstruction_on_selected_data_sets()
 
 
 
