@@ -185,11 +185,11 @@ class Tilt(Parent):
         self.parent.tilt_checkbox5 = line5.children[0]
         self.parent.user_value = line5.children[1]
 
-        self.parent.tilt_checkbox1.observe(self.tilt_checkbox1_changed, names="value")
-        self.parent.tilt_checkbox2.observe(self.tilt_checkbox2_changed, names="value")
-        self.parent.tilt_checkbox3.observe(self.tilt_checkbox3_changed, names="value")
-        self.parent.tilt_checkbox4.observe(self.tilt_checkbox4_changed, names="value")
-        self.parent.tilt_checkbox5.observe(self.tilt_checkbox5_changed, names="value")
+        # self.parent.tilt_checkbox1.observe(self.tilt_checkbox1_changed, names="value")
+        # self.parent.tilt_checkbox2.observe(self.tilt_checkbox2_changed, names="value")
+        # self.parent.tilt_checkbox3.observe(self.tilt_checkbox3_changed, names="value")
+        # self.parent.tilt_checkbox4.observe(self.tilt_checkbox4_changed, names="value")
+        # self.parent.tilt_checkbox5.observe(self.tilt_checkbox5_changed, names="value")
 
         vertical_layout = widgets.VBox([line1, line2, line3, line4, line5])
         display(vertical_layout)
@@ -232,14 +232,14 @@ class Tilt(Parent):
         self.parent.dict_tilt_values[TiltAlgorithms.scipy_minimizer] = tilt_value4
         scipy_minimizer_status.value = DONE
 
-    def apply_tilt_and_display(self):
+    def apply_tilt(self):
         tilt_value = self.get_tilt_value_selected()
         print(f"Applying tilt correction using {tilt_value:.3f} ...")
         self.parent.proj_tilt_corrected = diagnostics_tilt.apply_tilt_correction(arrays=self.parent.proj_mlog,
                                                               tilt=tilt_value)
 
+    def display_tilt(self):
         fig, ax = plt.subplots(nrows=1, ncols=1, num="Tilt Correction", figsize=(10, 10))
-
         index_0_image = self.parent.proj_tilt_corrected[self.parent.index_0_degree]
         index_180_image_flipped = np.fliplr(self.parent.proj_tilt_corrected[self.parent.index_180_degree])
         self.parent.overlap_image = np.add(index_0_image, index_180_image_flipped) / 2.
@@ -257,21 +257,6 @@ class Tilt(Parent):
             return self.parent.dict_tilt_values[TiltAlgorithms.scipy_minimizer]
         else:
             return self.parent.user_value.value
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     def test_slices_selection(self):
 
@@ -305,7 +290,7 @@ class Tilt(Parent):
                                               )
         display(self.reconstruct_slices)
 
-    def testing_algo_selected(self):
+    def apply_tilt_using_selected_algorithms(self):
 
         how_many_steps = len(self.parent.test_tilt_reconstruction)
         progress_bar = widgets.IntProgress(value=0,
@@ -369,6 +354,11 @@ class Tilt(Parent):
 
         progress_bar.close()
         self.list_options = list_options
+
+
+
+
+
 
     def display_results(self):
 

@@ -198,16 +198,17 @@ class Imars3dui:
 
     def apply_tilt_and_display(self):
         o_tilt = Tilt(parent=self)
-        o_tilt.apply_tilt_and_display()
+        o_tilt.apply_tilt()
+        o_tilt.display_tilt()
 
     def test_tilt_slices_selection(self):
         o_tilt = Tilt(parent=self)
         o_tilt.test_slices_selection()
 
-    def testing_algo_selected_and_display_results(self):
+    def testing_tilt_on_selected_algorithms(self):
         o_tilt = Tilt(parent=self)
-        o_tilt.testing_algo_selected()
-        o_tilt.display_results()
+        o_tilt.apply_tilt_using_selected_algorithms()
+
 
 
 
