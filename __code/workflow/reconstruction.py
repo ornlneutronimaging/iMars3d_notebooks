@@ -63,7 +63,8 @@ class TestReconstruction(Parent):
             coeff_zoom_y = height / (to_y - from_y)
 
             image_slice = rec_images[slice_index]
-            image_slice_zoom = ndimage.zoom(image_slice, (coeff_zoom_y, coeff_zoom_x))
+            image_slice_crop = image_slice[from_y: to_y, from_x: to_x]
+            image_slice_zoom = ndimage.zoom(image_slice_crop, (coeff_zoom_y, coeff_zoom_x))
 
             fig, axs = plt.subplots(num="testing reconstruction", ncols=2, nrows=1)
             fig.set_figwidth(15)
