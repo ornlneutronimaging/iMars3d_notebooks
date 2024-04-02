@@ -7,6 +7,7 @@ from IPython.core.display import HTML
 import matplotlib.pyplot as plt
 from ipywidgets import interactive
 import algotom.rec.reconstruction as rec
+from scipy import ndimage
 
 from imars3d.backend.diagnostics import tilt as diagnostics_tilt
 from imars3d.backend.diagnostics.rotation import find_rotation_center
@@ -446,27 +447,40 @@ class Tilt(Parent):
         init_col_value = np.floor(width/2)
         init_row_value = np.floor(height/2)
 
-        def plot_comparisons(algo_selected, color_range, col, row):
+        def plot_comparisons(algo_selected, color_range, col, row, zoom_x, zoom_y):
 
             slice1 = self.reconstruct_slices.result[0]
+            slice2 = self.reconstruct_slices.result[1]
+
+            from_x, to_x = zoom_x
+            from_y, to_y = zoom_y
+
+            coeff_zoom_x = width / (to_x - from_x)
+            coeff_zoom_y = height / (to_y - from_y)
+
+            image_slice1 = self.test_tilt_reconstruction[algo_selected][
+                    TiltTestKeys.reconstructed][slice1][from_y: to_y, from_x: to_x]
+            image_slice2 = self.test_tilt_reconstruction[algo_selected][
+                    TiltTestKeys.reconstructed][slice2][from_y: to_y, from_x: to_x]
+
+            image_slice1 = ndimage.zoom(image_slice1, (coeff_zoom_y, coeff_zoom_x))
+            image_slice2 = ndimage.zoom(image_slice2, (coeff_zoom_y, coeff_zoom_x))
+
             fig, ax = plt.subplots(nrows=2, ncols=2, figsize=(15, 15))
 
             fig.suptitle(f"Tilt: {self.parent.dict_tilt_values[algo_selected]} deg")
 
             # top view
             ax[0][0].imshow(
-                self.test_tilt_reconstruction[algo_selected][
-                    TiltTestKeys.reconstructed][slice1],
+                image_slice1,
                 vmin=color_range[0],
                 vmax=color_range[1])
             ax[0][0].set_title(f"Slice {slice1}")
             ax[0][0].axhline(row, color='blue')
             ax[0][0].axvline(col, color='blue')
 
-            slice2 = self.reconstruct_slices.result[1]
             ax[1][0].imshow(
-                self.test_tilt_reconstruction[algo_selected][
-                    TiltTestKeys.reconstructed][slice2],
+                image_slice2,
                 vmin=color_range[0],
                 vmax=color_range[1])
             ax[1][0].set_title(f"Slice {slice2}")
@@ -474,19 +488,15 @@ class Tilt(Parent):
             ax[1][0].axvline(col, color='red')
 
             # horizontal profile
-            horizontal_profile_slice1 = self.test_tilt_reconstruction[algo_selected][
-                    TiltTestKeys.reconstructed][slice1][row, :]
-            horizontal_profile_slice2 = self.test_tilt_reconstruction[algo_selected][
-                                            TiltTestKeys.reconstructed][slice2][row, :]
+            horizontal_profile_slice1 = image_slice1[row, :]
+            horizontal_profile_slice2 = image_slice2[row, :]
             ax[0][1].plot(horizontal_profile_slice1, color='blue')
             ax[0][1].plot(horizontal_profile_slice2, color='red')
             ax[0][1].set_title("Horizontal profiles")
 
             # vertical profile
-            vertical_profile_slice1 = self.test_tilt_reconstruction[algo_selected][
-                    TiltTestKeys.reconstructed][slice1][:, col]
-            vertical_profile_slice2 = self.test_tilt_reconstruction[algo_selected][
-                                          TiltTestKeys.reconstructed][slice2][:, col]
+            vertical_profile_slice1 = image_slice1[:, col]
+            vertical_profile_slice2 = image_slice2[:, col]
             ax[1][1].plot(vertical_profile_slice1, color='blue')
             ax[1][1].plot(vertical_profile_slice2, color='red')
             ax[1][1].set_title("Vertical profiles")
@@ -505,6 +515,14 @@ class Tilt(Parent):
                                                       max=width-1),
                                 row=widgets.IntSlider(value=init_row_value,
                                                       min=0,
-                                                      max=height-1)
+                                                      max=height-1),
+                                zoom_x=widgets.IntRangeSlider(value=[0, width-1],
+                                                              min=0,
+                                                              max=width-1,
+                                                              continuous_update=False),
+                                zoom_y=widgets.IntRangeSlider(value=[0, height-1],
+                                                              min=0,
+                                                              max=height-1,
+                                                              continuous_update=False)
                                 )
         display(test_tilt)
