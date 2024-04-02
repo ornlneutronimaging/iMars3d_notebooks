@@ -314,9 +314,9 @@ class Tilt(Parent):
         progress_bar = widgets.IntProgress(value=0,
                                            min=0,
                                            max=how_many_steps,
-                                           description="Global progress",
+                                           description="Progress:",
                                            style={'bar-color': 'green'},
-                                           layout={'width': 'max-content'})
+                                           )
         display(progress_bar)
 
         list_options = []
@@ -440,27 +440,56 @@ class Tilt(Parent):
         else:
             disable_button = True
 
-        def plot_comparisons(algo_selected, color_range):
+        height, width = np.shape(self.test_tilt_reconstruction[self.list_options[0]][
+                    TiltTestKeys.reconstructed][slices_indexes[0]])
+
+        init_col_value = np.floor(width/2)
+        init_row_value = np.floor(height/2)
+
+        def plot_comparisons(algo_selected, color_range, col, row):
 
             slice1 = self.reconstruct_slices.result[0]
-            fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(15, 10))
+            fig, ax = plt.subplots(nrows=2, ncols=2, figsize=(15, 15))
 
-            # fig.suptitle(f"Tilt: {self.parent.dict_tilt_values[algo_selected]} deg")
+            fig.suptitle(f"Tilt: {self.parent.dict_tilt_values[algo_selected]} deg")
 
-            ax[0].imshow(
+            # top view
+            ax[0][0].imshow(
                 self.test_tilt_reconstruction[algo_selected][
                     TiltTestKeys.reconstructed][slice1],
                 vmin=color_range[0],
                 vmax=color_range[1])
-            ax[0].set_title(f"Slice {slice1}")
+            ax[0][0].set_title(f"Slice {slice1}")
+            ax[0][0].axhline(row, color='blue')
+            ax[0][0].axvline(col, color='blue')
 
             slice2 = self.reconstruct_slices.result[1]
-            ax[1].imshow(
+            ax[1][0].imshow(
                 self.test_tilt_reconstruction[algo_selected][
                     TiltTestKeys.reconstructed][slice2],
                 vmin=color_range[0],
                 vmax=color_range[1])
-            ax[1].set_title(f"Slice {slice2}")
+            ax[1][0].set_title(f"Slice {slice2}")
+            ax[1][0].axhline(row, color='red')
+            ax[1][0].axvline(col, color='red')
+
+            # horizontal profile
+            horizontal_profile_slice1 = self.test_tilt_reconstruction[algo_selected][
+                    TiltTestKeys.reconstructed][slice1][row, :]
+            horizontal_profile_slice2 = self.test_tilt_reconstruction[algo_selected][
+                                            TiltTestKeys.reconstructed][slice2][row, :]
+            ax[0][1].plot(horizontal_profile_slice1, color='blue')
+            ax[0][1].plot(horizontal_profile_slice2, color='red')
+            ax[0][1].set_title("Horizontal profiles")
+
+            # vertical profile
+            vertical_profile_slice1 = self.test_tilt_reconstruction[algo_selected][
+                    TiltTestKeys.reconstructed][slice1][:, col]
+            vertical_profile_slice2 = self.test_tilt_reconstruction[algo_selected][
+                                          TiltTestKeys.reconstructed][slice2][:, col]
+            ax[1][1].plot(vertical_profile_slice1, color='blue')
+            ax[1][1].plot(vertical_profile_slice2, color='red')
+            ax[1][1].set_title("Vertical profiles")
 
         test_tilt = interactive(plot_comparisons,
                                 algo_selected=widgets.ToggleButtons(options=self.list_options,
@@ -471,5 +500,11 @@ class Tilt(Parent):
                                                                      max=max_value,
                                                                      step=0.00001,
                                                                      ),
+                                col=widgets.IntSlider(value=init_col_value,
+                                                      min=0,
+                                                      max=width-1),
+                                row=widgets.IntSlider(value=init_row_value,
+                                                      min=0,
+                                                      max=height-1)
                                 )
         display(test_tilt)
