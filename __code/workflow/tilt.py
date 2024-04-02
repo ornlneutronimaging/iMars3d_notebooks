@@ -314,8 +314,9 @@ class Tilt(Parent):
         progress_bar = widgets.IntProgress(value=0,
                                            min=0,
                                            max=how_many_steps,
-                                           description="Progress",
-                                           style={'bar-color': 'green'})
+                                           description="Global progress",
+                                           style={'bar-color': 'green'},
+                                           layout={'width': 'max-content'})
         display(progress_bar)
 
         list_options = []
@@ -391,18 +392,16 @@ class Tilt(Parent):
             self.test_tilt_reconstruction[key][TiltTestKeys.sinogram] = sinogram
 
             # calculate for each the center of rotation
-            print(f"{np.shape(sinogram) =}")
-            rot_center = find_rotation_center(arrays=sinogram,
-                                               angles=self.parent.rot_angles,
-                                               num_pairs=-1,
-                                               in_degrees=True,
-                                               atol_deg=self.parent.mean_delta_angle,
-                                               )
+            rot_center = find_rotation_center(arrays=value,
+                                              angles=self.parent.rot_angles,
+                                              num_pairs=-1,
+                                              in_degrees=True,
+                                              atol_deg=self.parent.mean_delta_angle,
+                                              )
             self.test_tilt_reconstruction[key][TiltTestKeys.center_of_rotation] = rot_center
 
             # reconstruct with only selected slices
             for _slice_index in slices_indexes:
-                print(f"{np.shape(sinogram[_slice_index]) =}")
                 _rec_img = rec.gridrec_reconstruction(sinogram[_slice_index],
                                                       rot_center[0],
                                                       angles=self.parent.rot_angles_rad,
@@ -422,45 +421,55 @@ class Tilt(Parent):
         min_value = 10
         max_value = -10
         for _option in self.list_options:
-            _min = np.min(self.test_tilt_reconstruction[self.list_options[0]][TiltTestKeys.reconstructed][slices_indexes[0]])
-            _max = np.max(self.test_tilt_reconstruction[self.list_options[0]][TiltTestKeys.reconstructed][slices_indexes[0]])
+            _min = np.min(self.test_tilt_reconstruction[self.list_options[0]][
+                              TiltTestKeys.reconstructed][slices_indexes[0]])
+            _max = np.max(self.test_tilt_reconstruction[self.list_options[0]][
+                              TiltTestKeys.reconstructed][slices_indexes[0]])
             min_value = _min if _min < min_value else min_value
             max_value = _max if _max > max_value else max_value
 
-            _min = np.min(self.test_tilt_reconstruction[self.list_options[0]][TiltTestKeys.reconstructed][slices_indexes[1]])
-            _max = np.max(self.test_tilt_reconstruction[self.list_options[0]][TiltTestKeys.reconstructed][slices_indexes[1]])
+            _min = np.min(self.test_tilt_reconstruction[self.list_options[0]][
+                              TiltTestKeys.reconstructed][slices_indexes[1]])
+            _max = np.max(self.test_tilt_reconstruction[self.list_options[0]][
+                               TiltTestKeys.reconstructed][slices_indexes[1]])
             min_value = _min if _min < min_value else min_value
             max_value = _max if _max > max_value else max_value
-
-        print(f"{min_value =}")
-        print(f"{max_value =}")
 
         if len(self.list_options) > 1:
+            disable_button = False
+        else:
+            disable_button = True
 
-            def plot_comparisons(algo_selected, color_range):
+        def plot_comparisons(algo_selected, color_range):
 
-                slice1 = self.reconstruct_slices.result[0]
-                fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(15, 10))
+            slice1 = self.reconstruct_slices.result[0]
+            fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(15, 10))
 
-                ax[0].imshow(
-                    self.test_tilt_reconstruction[algo_selected][
-                        TiltTestKeys.reconstructed][slice1],
+            # fig.suptitle(f"Tilt: {self.parent.dict_tilt_values[algo_selected]} deg")
+
+            ax[0].imshow(
+                self.test_tilt_reconstruction[algo_selected][
+                    TiltTestKeys.reconstructed][slice1],
                 vmin=color_range[0],
                 vmax=color_range[1])
+            ax[0].set_title(f"Slice {slice1}")
 
-                slice2 = self.reconstruct_slices.result[1]
-                ax[1].imshow(
-                    self.test_tilt_reconstruction[algo_selected][
-                        TiltTestKeys.reconstructed][slice2],
+            slice2 = self.reconstruct_slices.result[1]
+            ax[1].imshow(
+                self.test_tilt_reconstruction[algo_selected][
+                    TiltTestKeys.reconstructed][slice2],
                 vmin=color_range[0],
                 vmax=color_range[1])
+            ax[1].set_title(f"Slice {slice2}")
 
-            test_tilt = interactive(plot_comparisons,
-                                    algo_selected=widgets.ToggleButtons(options=self.list_options),
-                                    color_range=widgets.FloatRangeSlider(value=[min_value, max_value],
-                                                                         min=min_value,
-                                                                         max=max_value,
-                                                                         step=0.00001,
-                                                                         )
-                                    )
-            display(test_tilt)
+        test_tilt = interactive(plot_comparisons,
+                                algo_selected=widgets.ToggleButtons(options=self.list_options,
+                                                                    description='Algorithm:',
+                                                                    disabled=disable_button),
+                                color_range=widgets.FloatRangeSlider(value=[min_value, max_value],
+                                                                     min=min_value,
+                                                                     max=max_value,
+                                                                     step=0.00001,
+                                                                     ),
+                                )
+        display(test_tilt)
