@@ -6,8 +6,6 @@ import timeit
 from ipywidgets import interactive
 import ipywidgets as widgets
 from IPython.display import display
-from IPython.core.display import HTML
-import algotom.rec.reconstruction as rec
 import multiprocessing as mp
 
 import warnings
@@ -31,7 +29,7 @@ from imars3d.backend.reconstruction import recon
 from imars3d.backend.dataio.data import save_data
 from imars3d.backend.corrections.intensity_fluctuation_correction import normalize_roi
 
-from __code import DataType, TiltAlgorithms
+from __code import DataType, TiltAlgorithms, TiltTestKeys
 from __code.workflow.load import Load
 from __code.workflow.crop import Crop
 from __code.workflow.gamma_filtering import GammaFiltering
@@ -39,6 +37,7 @@ from __code.workflow.normalization import Normalization
 from __code.workflow.beam_fluctuation_correction import BeamFluctuationCorrection
 from __code.workflow.transmission_to_attenuation import TransmissionToAttenuation
 from __code.workflow.tilt import Tilt
+from __code.workflow.reconstruction import TestReconstruction
 
 from __code.tilt.direct_minimization import DirectMinimization
 from __code.tilt.phase_correlation import PhaseCorrelation
@@ -90,6 +89,7 @@ class Imars3dui:
     dc_raw = None
 
     o_tilt = None
+    o_test_reconstruction = None
 
     def __init__(self, working_dir="./"):
         # working_dir = self.find_first_real_dir(start_dir=working_dir)
@@ -201,10 +201,10 @@ class Imars3dui:
         self.o_tilt = Tilt(parent=self)
         self.o_tilt.calculate_tilt()
 
-    def apply_tilt_and_display(self):
-        o_tilt = Tilt(parent=self)
-        o_tilt.apply_tilt()
-        o_tilt.display_tilt()
+    # def apply_tilt_and_display(self):
+    #     o_tilt = Tilt(parent=self)
+    #     o_tilt.apply_tilt()
+    #     o_tilt.display_tilt()
 
     def test_tilt_slices_selection(self):
         self.o_tilt.test_slices_selection()
@@ -214,15 +214,11 @@ class Imars3dui:
         self.o_tilt.perform_reconstruction_on_selected_data_sets()
         self.o_tilt.display_test_results()
 
-
-
-
-
-
-
-
-
-
+    def display_with_tilt(self):
+        algo_selected = self.o_tilt.test_tilt.result
+        self.proj_tilt_corrected = self.o_tilt.test_tilt_reconstruction[algo_selected][TiltTestKeys.raw_3d]
+        self.rot_center = self.o_tilt.test_tilt_reconstruction[algo_selected][TiltTestKeys.center_of_rotation]
+        self.o_tilt.display_tilt()
 
     def filter_options(self):
         self.strikes_removal_option()
@@ -279,75 +275,34 @@ class Imars3dui:
                                                                value=0))
         display(plot_sinogram_ui)
 
-    def rotation_center(self):
-        print(f"Running rotation center ...")
-        t0 = timeit.default_timer()
-        self.rot_center = find_rotation_center(arrays=self.proj_tilt_corrected,
-                                               angles=self.rot_angles,
-                                               num_pairs=-1,
-                                               in_degrees=True,
-                                               atol_deg=self.mean_delta_angle,
-                                               )
-        t1 = timeit.default_timer()
-        print(f"rotation center found in {t1-t0:.2f}s")
-        print(f" - value: {self.rot_center}")
+    # ROTATION CENTER =======================================================================================
+
+    # def rotation_center(self):
+    #     print(f"Running rotation center ...")
+    #     t0 = timeit.default_timer()
+    #     self.rot_center = find_rotation_center(arrays=self.proj_tilt_corrected,
+    #                                            angles=self.rot_angles,
+    #                                            num_pairs=-1,
+    #                                            in_degrees=True,
+    #                                            atol_deg=self.mean_delta_angle,
+    #                                            )
+    #     t1 = timeit.default_timer()
+    #     print(f"rotation center found in {t1-t0:.2f}s")
+    #     print(f" - value: {self.rot_center}")
+
+    # TEST RECONSTRUCTION ====================================================================================
 
     # testing the reconstruction on a few slices
     def define_slices_to_test_reconstruction(self):
-        height, width = np.shape(self.overlap_image)
-        nbr_slices = 4
-        step = height / (nbr_slices + 1)
-        slices = [k * step for k in np.arange(1, nbr_slices + 1)]
-
-        display(
-            HTML("<span style='color:blue'><b>Position of the slices you want to test the reconstruction with:</b>" +
-                 "<br></span><b>To add a new slice</b>, enter value to the right of the last slice defined"))
-
-        def display_image_and_slices(list_slices):
-            fig, axs = plt.subplots(num='Select slices to reconstruct')
-            fig.set_figwidth(15)
-            axs.imshow(self.overlap_image)
-            for _slice in list_slices:
-                axs.axhline(_slice, color='red', linestyle='--')
-
-            return list_slices
-
-        self.display_slices = interactive(display_image_and_slices,
-                                     list_slices=widgets.IntsInput(value=slices,
-                                                                   min=0,
-                                                                   max=height - 1))
-        display(self.display_slices)
+        self.o_test = TestReconstruction(parent=self)
+        self.o_test.define_slices_to_test_reconstruction()
 
     def test_reconstruction(self):
-        list_slices = self.display_slices.result
-        rec_images = []
-        for num, idx in enumerate(list_slices):
-            rec_images.append(rec.gridrec_reconstruction(self.sinogram_mlog[idx],
-                                                         self.rot_center[0],
-                                                         angles=self.rot_angles,
-                                                         apply_log=False,
-                                                         ratio=1.0,
-                                                         filter_name='shepp',
-                                                         pad=100,
-                                                         ncore=NCORE))
+        self.o_test.test_reconstruction()
 
-        # display slices reconstructed here
-        def display_slices(slice_index):
-            fig, axs = plt.subplots(num="testing reconstruction", ncols=2, nrows=1)
-            fig.set_figwidth(15)
 
-            axs[0].imshow(rec_images[slice_index])
-            axs[0].set_title(f"Slice {list_slices[slice_index]}.")
-            axs[1].imshow(self.overlap_image)
-            axs[1].set_title(f"Integrated image and slice {list_slices[slice_index]} position.")
 
-            axs[1].axhline(list_slices[slice_index], color='red', linestyle='--')
 
-        display_test = interactive(display_slices,
-                                   slice_index=widgets.IntSlider(min=0,
-                                                                 max=len(list_slices) - 1,
-                                                                 continuous_update=True))
-        display(display_test)
 
     def ring_removal_options(self):
         self.ring_removal_ui = widgets.VBox([widgets.Checkbox(value=False,

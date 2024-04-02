@@ -259,6 +259,7 @@ class Tilt(Parent):
 
     def display_tilt(self):
         fig, ax = plt.subplots(nrows=1, ncols=1, num="Tilt Correction", figsize=(10, 10))
+        fig.suptitle("Tilt applied to data")
         index_0_image = self.parent.proj_tilt_corrected[self.parent.index_0_degree]
         index_180_image_flipped = np.fliplr(self.parent.proj_tilt_corrected[self.parent.index_180_degree])
         self.parent.overlap_image = np.add(index_0_image, index_180_image_flipped) / 2.
@@ -501,7 +502,9 @@ class Tilt(Parent):
             ax[1][1].plot(vertical_profile_slice2, color='red')
             ax[1][1].set_title("Vertical profiles")
 
-        test_tilt = interactive(plot_comparisons,
+            return algo_selected
+
+        self.test_tilt = interactive(plot_comparisons,
                                 algo_selected=widgets.ToggleButtons(options=self.list_options,
                                                                     description='Algorithm:',
                                                                     disabled=disable_button),
@@ -523,6 +526,6 @@ class Tilt(Parent):
                                 zoom_y=widgets.IntRangeSlider(value=[0, height-1],
                                                               min=0,
                                                               max=height-1,
-                                                              continuous_update=False)
+                                                              continuous_update=False),
                                 )
-        display(test_tilt)
+        display(self.test_tilt)
