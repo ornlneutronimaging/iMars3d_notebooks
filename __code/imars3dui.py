@@ -41,7 +41,7 @@ from __code.workflow.tilt import Tilt
 from __code.workflow.reconstruction import TestReconstruction
 from __code.workflow.ring_removal import RingRemoval
 from __code.workflow.filters import Filters
-from __code.workflow.sinaogram import Sinogram
+from __code.workflow.sinogram import Sinogram
 
 from __code.file_folder_browser import FileFolderBrowser
 from __code.display import Display
@@ -253,6 +253,7 @@ class Imars3dui:
         sinogram_data = Sinogram.create_sinogram(data_3d=self.proj_tilt_corrected)
         o_display = Display(parent=self)
         o_display.sinogram(sinogram_data=sinogram_data)
+        self.sinogram_before_ring_removal = sinogram_data
 
     # ROTATION CENTER =======================================================================================
 
@@ -297,9 +298,11 @@ class Imars3dui:
     # RECONSTRUCTION  ==========================================================================================
 
     def testing_reconstruction_algorithm(self):
-        pass
+        self.o_testing_algo = TestReconstruction(parent=self)
+        self.o_testing_algo.testing_reconstruction_algorithms()
 
-
+    def running_reconstruction_test(self):
+        self.o_testing_algo.running_reconstruction_test()
 
 
 

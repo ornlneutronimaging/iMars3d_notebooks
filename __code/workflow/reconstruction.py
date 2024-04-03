@@ -90,3 +90,72 @@ class TestReconstruction(Parent):
                                                                  continuous_update=False),
                                    )
         display(display_test)
+
+    def testing_reconstruction_algorithms(self):
+        display(widgets.HTML("<font color='blue'>Define reconstruction algorithms to use and their settings:"))
+
+        # gridrec
+        self.gridrec_layout = widgets.VBox([widgets.Checkbox(value=True,
+                                                        description="Use this method?"),
+                                       widgets.FloatText(value=1.0,
+                                                         description="Ratio:",
+                                                         step=0.1),
+                                       widgets.IntText(value=100,
+                                                       description="Pad:"),
+                                       widgets.HBox([widgets.Label("Filter:"),
+                                                     widgets.Label("shepp")]),
+                                       ])
+
+        # astra
+        self.astra_layout = widgets.VBox([widgets.Checkbox(value=True,
+                                                      description="Use this method?"),
+                                     widgets.RadioButtons(options=["CPU", "GPU"]),
+                                     widgets.Select(options=['FBP', 'SIRT', 'ART', 'CGLS'],
+                                                    description="Algorithm"),
+                                     widgets.FloatText(value=1.0,
+                                                       description="Ratio:",
+                                                       step=0.1),
+                                     widgets.IntText(value=300,
+                                                     description="Nbr iter:"),
+                                     widgets.HBox([widgets.Label("Filter:"),
+                                                   widgets.Label("hann")])])
+
+        # svmbir
+        self.svmbir_layout = widgets.VBox([widgets.Checkbox(value=True,
+                                                       description="Use this method?"),
+                                      widgets.HBox([widgets.Label(value='Signal to noise:'),
+                                                    widgets.FloatText(value=30.0,
+                                                                      layout=widgets.Layout(width="50px"))]),
+                                      widgets.FloatSlider(value=1.2,
+                                                          min=1,
+                                                          max=2,
+                                                          description="P"),
+                                      widgets.FloatSlider(value=2.0,
+                                                          min=0,
+                                                          max=10,
+                                                          description="T"),
+                                      widgets.FloatSlider(value=0.0,
+                                                          min=0,
+                                                          max=100,
+                                                          description="Sharpness"),
+                                      widgets.HBox([widgets.Label(value='Max iterations:'),
+                                                    widgets.IntText(value=100,
+                                                                    layout=widgets.Layout(width="50px"))]),
+                                      widgets.HBox([widgets.Label("Weight type:"),
+                                                    widgets.Label("transmission")]),
+                                      widgets.Checkbox(value=False,
+                                                       description="Verbose:"),
+                                      widgets.HBox([widgets.Label("Temp disk:"),
+                                                    widgets.Label("/netdisk/y9z/svmbir_cache")])
+
+                                      ])
+
+        accordion = widgets.Accordion(children=[self.gridrec_layout,
+                                                self.astra_layout,
+                                                self.svmbir_layout],
+                                      titles=('Gridrec', 'ASTRA', 'svMBIR'))
+        accordion.selected_index = 0
+        display(accordion)
+
+    def running_reconstruction_test(self):
+        print("running reconstruction test")

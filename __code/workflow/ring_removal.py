@@ -71,11 +71,13 @@ class RingRemoval(Parent):
             print(f"time= {t1 - t0:.2f}s")
         else:
             print("No strikes removal using Ketcham")
-            self.proj_ring_removal_3 = self.parent.proj_ring_removal_2
+            self.proj_ring_removal_3 = self.proj_ring_removal_2
 
         self.parent.proj_ring_removed = self.proj_ring_removal_3
 
     def test_ring_removal(self):
+
+        before_singgram_log = self.parent.sinogram_before_ring_removal
 
         after_sinogram_mlog = self.parent.proj_ring_removed.astype(np.float32)
         after_sinogram_mlog = np.moveaxis(after_sinogram_mlog, 1, 0)
@@ -83,16 +85,16 @@ class RingRemoval(Parent):
         def plot_test_ring_removal(index):
             fig, axis = plt.subplots(num="sinogram", figsize=(15, 10), nrows=1, ncols=3)
 
-            axis[0].imshow(self.parent.sinogram_mlog[index])
+            axis[0].imshow(before_singgram_log[index])
             axis[0].set_title(f"Before ring removal")
 
             axis[1].imshow(after_sinogram_mlog[index])
             axis[1].set_title(f"After ring removal")
 
-            axis[2].imshow(after_sinogram_mlog[index] - self.parent.sinogram_mlog[index])
+            axis[2].imshow(after_sinogram_mlog[index] - before_singgram_log[index])
             axis[2].set_title(f"Difference")
 
         plot_test_ui = interactive(plot_test_ring_removal,
                                    index=widgets.IntSlider(min=0,
-                                                           max=len(self.parent.sinogram_mlog)))
+                                                           max=len(after_sinogram_mlog)))
         display(plot_test_ui)
