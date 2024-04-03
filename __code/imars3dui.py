@@ -29,7 +29,8 @@ from imars3d.backend.reconstruction import recon
 from imars3d.backend.dataio.data import save_data
 from imars3d.backend.corrections.intensity_fluctuation_correction import normalize_roi
 
-from __code import DataType, TiltAlgorithms, TiltTestKeys
+from __code import DataType, TiltAlgorithms, TiltTestKeys, config
+
 from __code.workflow.load import Load
 from __code.workflow.crop import Crop
 from __code.workflow.gamma_filtering import GammaFiltering
@@ -39,14 +40,11 @@ from __code.workflow.transmission_to_attenuation import TransmissionToAttenuatio
 from __code.workflow.tilt import Tilt
 from __code.workflow.reconstruction import TestReconstruction
 from __code.workflow.ring_removal import RingRemoval
-
-from __code.tilt.direct_minimization import DirectMinimization
-from __code.tilt.phase_correlation import PhaseCorrelation
-from __code.tilt.use_center import UseCenter
-from __code import config
+from __code.workflow.filters import Filters
+from __code.workflow.sinaogram import Sinogram
 
 from __code.file_folder_browser import FileFolderBrowser
-from __code import NCORE
+from __code.display import Display
 
 default_input_folder = {DataType.raw: 'ct_scans',
                         DataType.ob: 'ob',
@@ -220,13 +218,15 @@ class Imars3dui:
         self.rot_center = self.o_tilt.test_tilt_reconstruction[algo_selected][TiltTestKeys.center_of_rotation]
         self.o_tilt.display_tilt()
 
+    # FILTERING ==========================================================================================
+
     def filter_options(self):
-        self.strikes_removal_option()
+        # self.strikes_removal_option()
         self.remove_negative_values_option()
 
     def strikes_removal_option(self):
         self.strikes_removal_ui = widgets.Checkbox(value=False,
-                                                   disabled= not enable_remove_ring_artifact,
+                                                   disabled=not enable_remove_ring_artifact,
                                                    description="Strikes removal")
         display(self.strikes_removal_ui)
 
@@ -236,44 +236,23 @@ class Imars3dui:
         display(self.remove_negative_ui)
 
     def apply_filter_options(self):
-        self.strikes_removal()
+        # self.strikes_removal()
         self.remove_negative_values()
 
     def remove_negative_values(self):
-        """remove all the intensity that are below 0"""
-        if self.remove_negative_ui.value:
-            self.proj_mlog[self.proj_mlog < 0] = 0
-            print(" Removed negative values!")
-        else:
-            print(" Skipped remove negative values!")
+        o_filter = Filters(parent=self)
+        o_filter.remove_negative_values()
 
     def strikes_removal(self):
-        if self.strikes_removal_ui.value:
-            t0 = timeit.default_timer()
-            print("Running strikes removal ...")
-            self.proj_strikes_removed = remove_ring_artifact(arrays=self.proj_tilt_corrected,
-                                                             kernel_size=5,
-                                                             max_workers=NCORE)
-            print(" strikes removal done!")
-            t1 = timeit.default_timer()
-            print(f"time= {t1 - t0:.2f}s")
-        else:
-            self.proj_strikes_removed = self.proj_tilt_corrected
-            print(" Skipped strikes removal!")
+        o_filter = Filters(parent=self)
+        o_filter.strikes_removal()
 
-    def display_sinogram(self):
-        self.sinogram_mlog = np.moveaxis(self.proj_strikes_removed, 1, 0)
+    # SINOGRAM ==============================================================================================
 
-        def plot_sinogram(index):
-            fig, axis = plt.subplots(num="sinogram", figsize=(10, 10), nrows=1, ncols=1)
-            axis.imshow(self.sinogram_mlog[index])
-            axis.set_title(f"Sinogram at slice #{index}")
-
-        plot_sinogram_ui = interactive(plot_sinogram,
-                                       index=widgets.IntSlider(min=0,
-                                                               max=len(self.sinogram_mlog),
-                                                               value=0))
-        display(plot_sinogram_ui)
+    def create_and_display_sinogram(self):
+        sinogram_data = Sinogram.create_sinogram(data_3d=self.proj_tilt_corrected)
+        o_display = Display(parent=self)
+        o_display.sinogram(sinogram_data=sinogram_data)
 
     # ROTATION CENTER =======================================================================================
 
@@ -290,17 +269,9 @@ class Imars3dui:
     #     print(f"rotation center found in {t1-t0:.2f}s")
     #     print(f" - value: {self.rot_center}")
 
-    # TEST RECONSTRUCTION ====================================================================================
-
-    # testing the reconstruction on a few slices
-    def define_slices_to_test_reconstruction(self):
-        self.o_test = TestReconstruction(parent=self)
-        self.o_test.define_slices_to_test_reconstruction()
-
-    def test_reconstruction(self):
-        self.o_test.test_reconstruction()
-
     # RING REMOVAL ==========================================================================================
+
+    # will crete the proj_ring_removed data set
 
     def ring_removal_options(self):
         self.o_ring_removal = RingRemoval(parent=self)
@@ -312,10 +283,26 @@ class Imars3dui:
     def test_ring_removal(self):
         self.o_ring_removal.test_ring_removal()
 
+    # TEST RECONSTRUCTION ====================================================================================
+
+    # testing the reconstruction on a few slices
+    def define_slices_to_test_reconstruction(self):
+        self.o_test = TestReconstruction(parent=self)
+        self.o_test.define_slices_to_test_reconstruction()
+
+    def test_reconstruction(self):
+        self.sinogram_mlog = Sinogram.create_sinogram(data_3d=self.proj_ring_removed)
+        self.o_test.test_reconstruction()
+
     # RECONSTRUCTION  ==========================================================================================
 
     def testing_reconstruction_algorithm(self):
         pass
+
+
+
+
+
 
 
     def reconstruction_and_display(self):

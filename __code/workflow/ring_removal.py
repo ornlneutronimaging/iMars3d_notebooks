@@ -38,44 +38,46 @@ class RingRemoval(Parent):
             print("Running strikes removal using BM3D ...")
             import bm3d_streak_removal as bm3d
             proj_mlog_bm3d = bm3d.extreme_streak_attenuation(self.parent.proj_tilt_corrected)
-            self.parent.proj_ring_removal_1 = bm3d.multiscale_streak_removal(proj_mlog_bm3d)
+            self.proj_ring_removal_1 = bm3d.multiscale_streak_removal(proj_mlog_bm3d)
             print(" strikes removal done!")
             t1 = timeit.default_timer()
             print(f"time= {t1 - t0:.2f}s")
         else:
             print("No strikes removal using BM3D")
-            self.parent.proj_ring_removal_1 = self.parent.proj_tilt_corrected
+            self.proj_ring_removal_1 = self.parent.proj_tilt_corrected
 
         # tomopy, Vo
         if self.ring_removal_ui.children[1].value:
             t0 = timeit.default_timer()
             print("Running strikes removal using Vo ...")
-            self.parent.proj_ring_removal_2 = tomopy.remove_all_stripe(self.parent.proj_ring_removal_1,
+            self.proj_ring_removal_2 = tomopy.remove_all_stripe(self.proj_ring_removal_1,
                                                                 ncore=NCORE)
             print(" strikes removal done!")
             t1 = timeit.default_timer()
             print(f"time= {t1 - t0:.2f}s")
         else:
             print("No strikes removal using Vo")
-            self.parent.proj_ring_removal_2 = self.proj_ring_removal_1
+            self.proj_ring_removal_2 = self.proj_ring_removal_1
 
         # ketcham
         if self.ring_removal_ui.children[2].value:
             t0 = timeit.default_timer()
             print("Running strikes removal using Ketcham ...")
-            self.parent.proj_strikes_removed = remove_ring_artifact(arrays=self.parent.proj_ring_removal_2,
-                                                             kernel_size=5,
-                                                             max_workers=NCORE)
+            self.proj_strikes_removal_3 = remove_ring_artifact(arrays=self.proj_ring_removal_2,
+                                                               kernel_size=5,
+                                                               max_workers=NCORE)
             print(" strikes removal done!")
             t1 = timeit.default_timer()
             print(f"time= {t1 - t0:.2f}s")
         else:
             print("No strikes removal using Ketcham")
-            self.parent.proj_ring_removal_3 = self.parent.proj_ring_removal_2
+            self.proj_ring_removal_3 = self.parent.proj_ring_removal_2
+
+        self.parent.proj_ring_removed = self.proj_ring_removal_3
 
     def test_ring_removal(self):
 
-        after_sinogram_mlog = self.parent.proj_ring_removal_3.astype(np.float32)
+        after_sinogram_mlog = self.parent.proj_ring_removed.astype(np.float32)
         after_sinogram_mlog = np.moveaxis(after_sinogram_mlog, 1, 0)
 
         def plot_test_ring_removal(index):
