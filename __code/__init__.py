@@ -36,3 +36,37 @@ class TiltTestKeys:
     center_of_rotation = 'center_of_rotation'
     reconstructed = 'reconstructed'
 
+
+class ReconstructionAlgo:
+    gridrec = 'gridrec'
+    astra = 'astra'
+    svmbir = 'svmbir'
+
+
+class RecParameters:
+    use_this_method = "use this method"
+
+
+class GridRecParameters(RecParameters):
+    ratio = 'ratio'
+    pad = 'pad'
+    filter = 'filter'
+
+
+class AstraParameters(RecParameters):
+    cpu_or_gpu = 'cpu or gpu'
+    algorithm = 'algorithm'
+    ratio = 'ratio'
+    nbr_iter = 'nbr iterations'
+    filter = 'filter'
+
+
+class SvmbirParameters(RecParameters):
+    signal_to_noise = 'signal to noise ratio'
+    p = 'P'
+    t = 'T'
+    sharpness = 'sharpness'
+    max_iterations = 'max iterations'
+    weight_type = 'weight type'
+    verbose = 'verbose'
+    temp_disk = 'temp disk'

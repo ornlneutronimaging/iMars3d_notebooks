@@ -1,3 +1,5 @@
+import timeit
+
 import numpy as np
 from ipywidgets import interactive
 import ipywidgets as widgets
@@ -10,9 +12,13 @@ from scipy import ndimage
 
 
 from __code import NCORE
+from __code import ReconstructionAlgo, GridRecParameters, AstraParameters, SvmbirParameters
+from __code import TiltTestKeys
 
 
 class TestReconstruction(Parent):
+
+    test_reconstruction_dict = {}
 
     def define_slices_to_test_reconstruction(self):
         height, width = np.shape(self.parent.overlap_image)
@@ -157,5 +163,80 @@ class TestReconstruction(Parent):
         accordion.selected_index = 0
         display(accordion)
 
+    def retrieving_parameters(self):
+
+        gridrec_layout = self.gridrec_layout
+        astra_layout = self.astra_layout
+        svmbir_layout = self.svmbir_layout
+
+        gridrec_dict = {GridRecParameters.use_this_method: gridrec_layout.children[0].value,
+                        GridRecParameters.ratio: gridrec_layout.children[1].value,
+                        GridRecParameters.pad: gridrec_layout.children[2].value,
+                        GridRecParameters.filter: gridrec_layout.children[3].children[1].value}
+
+        astra_dict = {AstraParameters.use_this_method: astra_layout.children[0].value,
+                      AstraParameters.cpu_or_gpu: astra_layout.children[1].value,
+                      AstraParameters.algorithm: astra_layout.children[2].value,
+                      AstraParameters.ratio: astra_layout.children[3].value,
+                      AstraParameters.nbr_iter: astra_layout.children[4].value,
+                      AstraParameters.filter: astra_layout.children[5].children[1].value}
+
+        svmbir_dict = {SvmbirParameters.use_this_method: svmbir_layout.children[0].value,
+                       SvmbirParameters.signal_to_noise: svmbir_layout.children[1].children[1].value,
+                       SvmbirParameters.p: svmbir_layout.children[2].value,
+                       SvmbirParameters.t: svmbir_layout.children[3].value,
+                       SvmbirParameters.sharpness: svmbir_layout.children[4].value,
+                       SvmbirParameters.max_iterations: svmbir_layout.children[5].children[1].value,
+                       SvmbirParameters.weight_type: svmbir_layout.children[6].children[1].value,
+                       SvmbirParameters.verbose: svmbir_layout.children[7].value,
+                       SvmbirParameters.temp_disk: svmbir_layout.children[8].children[1].value,
+                       }
+
+        self.test_reconstruction_dict[ReconstructionAlgo.gridrec] = gridrec_dict
+        self.test_reconstruction_dict[ReconstructionAlgo.astra] = astra_dict
+        self.test_reconstruction_dict[ReconstructionAlgo.svmbir] = svmbir_dict
+
     def running_reconstruction_test(self):
         print("running reconstruction test")
+
+        # list of slices to use to reconstruct
+        list_slices = self.display_slices.result
+
+        # sinogram
+        sinogram = self.parent.sinogram_after_ring_removal
+
+        # center_of_rotation
+        tilt_algo_selected = self.parent.o_tilt.test_tilt.result
+        rot_center = self.parent.o_tilt.test_tilt_reconstruction[tilt_algo_selected][TiltTestKeys.center_of_rotation][0]
+
+        # list of angles
+        rot_angles_rad = self.parent.rot_angles_rad
+        rot_angles_deg = self.parent.rot_angles
+
+        # gridrec
+        if self.test_reconstruction_dict[ReconstructionAlgo.gridrec][GridRecParameters.use_this_method]:
+
+            print("\t> testing reconstruction using gridrec:")
+            gridrec_dict = self.test_reconstruction_dict[ReconstructionAlgo.gridrec]
+            ratio = gridrec_dict[GridRecParameters.ratio]
+            filter = gridrec_dict[GridRecParameters.filter]
+            pad = gridrec_dict[GridRecParameters.pad]
+
+            t_start = timeit.default_timer()
+            for slice in list_slices:
+                rec_img = rec.gridrec_reconstruction(sinogram[slice],
+                                                     rot_center,
+                                                     angles=rot_angles_rad,
+                                                     apply_log=False,
+                                                     ratio=ratio,
+                                                     filter_name=filter,
+                                                     pad=pad,
+                                                     ncore=NCORE)
+            t_end = timeit.default_timer()
+            print(f"Time spent reconstructing using Gridrec: {(t_end - t_start)/60} mns")
+
+        if self.test_reconstruction_dict[ReconstructionAlgo.astra][GridRecParameters.use_this_method]:
+            print("\t> testing reconstruction using astra:")
+
+        if self.test_reconstruction_dict[ReconstructionAlgo.svmbir][GridRecParameters.use_this_method]:
+            print("\t> testing reconstruction using svMBIR:")

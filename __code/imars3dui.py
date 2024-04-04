@@ -89,6 +89,10 @@ class Imars3dui:
     o_test_reconstruction = None
     o_ring_removal = None
 
+    # Ring removal
+    sinogram_before_ring_removal = None
+    sinogram_after_ring_removal = None
+
     def __init__(self, working_dir="./"):
         # working_dir = self.find_first_real_dir(start_dir=working_dir)
         self.working_dir = os.path.join(working_dir, 'raw', default_input_folder[DataType.raw])
@@ -288,21 +292,21 @@ class Imars3dui:
 
     # testing the reconstruction on a few slices
     def define_slices_to_test_reconstruction(self):
-        self.o_test = TestReconstruction(parent=self)
-        self.o_test.define_slices_to_test_reconstruction()
+        self.o_test_reco = TestReconstruction(parent=self)
+        self.o_test_reco.define_slices_to_test_reconstruction()
 
     def test_reconstruction(self):
         self.sinogram_mlog = Sinogram.create_sinogram(data_3d=self.proj_ring_removed)
-        self.o_test.test_reconstruction()
+        self.o_test_reco.test_reconstruction()
 
     # RECONSTRUCTION  ==========================================================================================
 
     def testing_reconstruction_algorithm(self):
-        self.o_testing_algo = TestReconstruction(parent=self)
-        self.o_testing_algo.testing_reconstruction_algorithms()
+        self.o_test_reco.testing_reconstruction_algorithms()
 
     def running_reconstruction_test(self):
-        self.o_testing_algo.running_reconstruction_test()
+        self.o_test_reco.retrieving_parameters()
+        self.o_test_reco.running_reconstruction_test()
 
 
 

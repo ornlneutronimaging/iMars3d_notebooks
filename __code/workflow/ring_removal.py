@@ -81,6 +81,7 @@ class RingRemoval(Parent):
 
         after_sinogram_mlog = self.parent.proj_ring_removed.astype(np.float32)
         after_sinogram_mlog = np.moveaxis(after_sinogram_mlog, 1, 0)
+        self.parent.sinogram_after_ring_removal = after_sinogram_mlog
 
         def plot_test_ring_removal(index):
             fig, axis = plt.subplots(num="sinogram", figsize=(15, 10), nrows=1, ncols=3)

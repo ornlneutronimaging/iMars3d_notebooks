@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def convert_deg_in_rad(array_of_angles_in_deg):
     array_of_angles_in_rad = []
     for angle in array_of_angles_in_deg:

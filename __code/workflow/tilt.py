@@ -18,11 +18,10 @@ from __code.parent import Parent
 from __code import DataType
 from __code import NCORE
 
-from __code.utilities.math import convert_deg_in_rad
-
 from __code.tilt.direct_minimization import DirectMinimization
 from __code.tilt.phase_correlation import PhaseCorrelation
 from __code.tilt.use_center import UseCenter
+from __code.utilities.math import convert_deg_in_rad
 
 
 class Tilt(Parent):
@@ -380,8 +379,8 @@ class Tilt(Parent):
 
         slices_indexes = self.reconstruct_slices.result
 
-        # convert angles in rad
-        self.parent.rot_angles_rad = self.parent.rot_angles
+        # angles in rad
+        self.parent.rot_angles_rad = convert_deg_in_rad(self.parent.rot_angles)
 
         for key in self.test_tilt_reconstruction.keys():
 
