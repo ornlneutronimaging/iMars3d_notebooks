@@ -10,9 +10,10 @@ from IPython.core.display import HTML
 import algotom.rec.reconstruction as rec
 from scipy import ndimage
 
+from imars3d.backend.reconstruction import recon
 
 from __code import NCORE
-from __code import ReconstructionAlgo, GridRecParameters, AstraParameters, SvmbirParameters
+from __code import ReconstructionAlgo, GridRecParameters, AstraParameters, SvmbirParameters, Imars3dParameters
 from __code import TiltTestKeys
 
 
@@ -112,10 +113,16 @@ class TestReconstruction(Parent):
                                                      widgets.Label("shepp")]),
                                        ])
 
+        # imars3d
+        self.imars3d_layout = widgets.VBox([widgets.Checkbox(value=True,
+                                                      description="Use this method?"),
+                                            ])
+
         # astra
         self.astra_layout = widgets.VBox([widgets.Checkbox(value=True,
                                                       description="Use this method?"),
-                                     widgets.RadioButtons(options=["CPU", "GPU"]),
+                                     widgets.RadioButtons(options=["CPU", "GPU"],
+                                                          disabled=True),
                                      widgets.Select(options=['FBP', 'SIRT', 'ART', 'CGLS'],
                                                     description="Algorithm"),
                                      widgets.FloatText(value=1.0,
@@ -157,6 +164,7 @@ class TestReconstruction(Parent):
                                       ])
 
         accordion = widgets.Accordion(children=[self.gridrec_layout,
+                                                self.imars3d_layout,
                                                 self.astra_layout,
                                                 self.svmbir_layout],
                                       titles=('Gridrec', 'ASTRA', 'svMBIR'))
@@ -166,6 +174,7 @@ class TestReconstruction(Parent):
     def retrieving_parameters(self):
 
         gridrec_layout = self.gridrec_layout
+        imars3d_layout = self.imars3d_layout
         astra_layout = self.astra_layout
         svmbir_layout = self.svmbir_layout
 
@@ -173,6 +182,8 @@ class TestReconstruction(Parent):
                         GridRecParameters.ratio: gridrec_layout.children[1].value,
                         GridRecParameters.pad: gridrec_layout.children[2].value,
                         GridRecParameters.filter: gridrec_layout.children[3].children[1].value}
+
+        imars3d_dict = {Imars3dParameters.use_this_method: imars3d_layout.children[0].value}
 
         astra_dict = {AstraParameters.use_this_method: astra_layout.children[0].value,
                       AstraParameters.cpu_or_gpu: astra_layout.children[1].value,
@@ -193,6 +204,7 @@ class TestReconstruction(Parent):
                        }
 
         self.test_reconstruction_dict[ReconstructionAlgo.gridrec] = gridrec_dict
+        self.test_reconstruction_dict[ReconstructionAlgo.imars3d] = imars3d_dict
         self.test_reconstruction_dict[ReconstructionAlgo.astra] = astra_dict
         self.test_reconstruction_dict[ReconstructionAlgo.svmbir] = svmbir_dict
 
@@ -204,6 +216,9 @@ class TestReconstruction(Parent):
 
         # sinogram
         sinogram = self.parent.sinogram_after_ring_removal
+
+        # projection after ring removed
+        proj_ring_removed = self.parent.proj_ring_removed
 
         # center_of_rotation
         tilt_algo_selected = self.parent.o_tilt.test_tilt.result
@@ -233,10 +248,37 @@ class TestReconstruction(Parent):
                                                      pad=pad,
                                                      ncore=NCORE)
             t_end = timeit.default_timer()
-            print(f"Time spent reconstructing using Gridrec: {(t_end - t_start)/60} mns")
+            print(f"\t Gridrec ran in {(t_end - t_start)/60} mns")
 
         if self.test_reconstruction_dict[ReconstructionAlgo.astra][GridRecParameters.use_this_method]:
             print("\t> testing reconstruction using astra:")
+            astra_dict = self.test_reconstruction_dict[ReconstructionAlgo.astra]
+
+            algorithm = astra_dict[AstraParameters.algorithm]
+            ratio = astra_dict[AstraParameters.ratio]
+            nbr_iterations = astra_dict[AstraParameters.nbr_iter]
+            filter = astra_dict[AstraParameters.filter]
+
+            t_start = timeit.default_timer()
+            if astra_dict[AstraParameters.cpu_or_gpu] == 'CPU':  # using CPU
+                pass
+            else:
+                algorithm = f"{algorithm}_CUDA"   # using GPU
+
+            for slice in list_slices:
+                rec_img = rec.astra_reconstruction(sinogram[slice],
+                                                   rot_center[0],
+                                                   angles=rot_angles_rad,
+                                                   apply_log=False,
+                                                   method=algorithm,
+                                                   ratio=ratio,
+                                                   filter_name=filter,
+                                                   pad=None,
+                                                   num_iter=nbr_iterations,
+                                                   ncore=NCORE)
+
+            t_end = timeit.default_timer()
+            print(f"\t Gridrec ran in {(t_end - t_start)/60} mns")
 
         if self.test_reconstruction_dict[ReconstructionAlgo.svmbir][GridRecParameters.use_this_method]:
             print("\t> testing reconstruction using svMBIR:")

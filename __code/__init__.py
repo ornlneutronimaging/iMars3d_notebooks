@@ -39,6 +39,7 @@ class TiltTestKeys:
 
 class ReconstructionAlgo:
     gridrec = 'gridrec'
+    imars3d = 'imars3d'
     astra = 'astra'
     svmbir = 'svmbir'
 
@@ -53,8 +54,13 @@ class GridRecParameters(RecParameters):
     filter = 'filter'
 
 
+class Imars3dParameters(RecParameters):
+    pass
+
+
 class AstraParameters(RecParameters):
     cpu_or_gpu = 'cpu or gpu'
+    imars3d_or_astra = "imars3d or astra"
     algorithm = 'algorithm'
     ratio = 'ratio'
     nbr_iter = 'nbr iterations'
