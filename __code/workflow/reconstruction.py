@@ -167,7 +167,7 @@ class TestReconstruction(Parent):
                                                 self.imars3d_layout,
                                                 self.astra_layout,
                                                 self.svmbir_layout],
-                                      titles=('Gridrec', 'ASTRA', 'svMBIR'))
+                                      titles=('Gridrec', 'iMars3d', 'ASTRA', 'svMBIR'))
         accordion.selected_index = 0
         display(accordion)
 

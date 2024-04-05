@@ -250,6 +250,9 @@ class Tilt(Parent):
         self.parent.dict_tilt_values[TiltAlgorithms.scipy_minimizer] = tilt_value4
         scipy_minimizer_status.value = DONE
 
+        # user defined
+        self.parent.dict_tilt_values[TiltAlgorithms.user] = self.parent.user_value.value
+
     def apply_tilt(self):
         tilt_value = self.get_tilt_value_selected()
         print(f"Applying tilt correction using {tilt_value:.3f} ...")
