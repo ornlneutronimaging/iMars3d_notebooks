@@ -14,12 +14,13 @@ from imars3d.backend.reconstruction import recon
 
 from __code import NCORE
 from __code import ReconstructionAlgo, GridRecParameters, AstraParameters, SvmbirParameters, Imars3dParameters
-from __code import TiltTestKeys
+from __code import TiltTestKeys, DefaultReconstructionAlgoToUse
 
 
 class TestReconstruction(Parent):
 
     test_reconstruction_dict = {}
+    rest_reconstruction_result = {}
 
     def define_slices_to_test_reconstruction(self):
         height, width = np.shape(self.parent.overlap_image)
@@ -102,7 +103,7 @@ class TestReconstruction(Parent):
         display(widgets.HTML("<font color='blue'>Define reconstruction algorithms to use and their settings:"))
 
         # gridrec
-        self.gridrec_layout = widgets.VBox([widgets.Checkbox(value=True,
+        self.gridrec_layout = widgets.VBox([widgets.Checkbox(value=DefaultReconstructionAlgoToUse.gridrec,
                                                         description="Use this method?"),
                                        widgets.FloatText(value=1.0,
                                                          description="Ratio:",
@@ -114,12 +115,12 @@ class TestReconstruction(Parent):
                                        ])
 
         # imars3d
-        self.imars3d_layout = widgets.VBox([widgets.Checkbox(value=True,
+        self.imars3d_layout = widgets.VBox([widgets.Checkbox(value=DefaultReconstructionAlgoToUse.imars3d,
                                                       description="Use this method?"),
                                             ])
 
         # astra
-        self.astra_layout = widgets.VBox([widgets.Checkbox(value=True,
+        self.astra_layout = widgets.VBox([widgets.Checkbox(value=DefaultReconstructionAlgoToUse.astra,
                                                       description="Use this method?"),
                                      widgets.RadioButtons(options=["CPU", "GPU"],
                                                           disabled=True),
@@ -134,7 +135,7 @@ class TestReconstruction(Parent):
                                                    widgets.Label("hann")])])
 
         # svmbir
-        self.svmbir_layout = widgets.VBox([widgets.Checkbox(value=True,
+        self.svmbir_layout = widgets.VBox([widgets.Checkbox(value=DefaultReconstructionAlgoToUse.svmbir,
                                                        description="Use this method?"),
                                       widgets.HBox([widgets.Label(value='Signal to noise:'),
                                                     widgets.FloatText(value=30.0,
@@ -225,8 +226,8 @@ class TestReconstruction(Parent):
         rot_center = self.parent.o_tilt.test_tilt_reconstruction[tilt_algo_selected][TiltTestKeys.center_of_rotation][0]
 
         # list of angles
-        rot_angles_rad = self.parent.rot_angles_rad
-        rot_angles_deg = self.parent.rot_angles
+        rot_angles_rad = np.array(self.parent.rot_angles_rad)
+        rot_angles_deg = np.array(self.parent.rot_angles)
 
         # gridrec
         if self.test_reconstruction_dict[ReconstructionAlgo.gridrec][GridRecParameters.use_this_method]:
@@ -248,7 +249,18 @@ class TestReconstruction(Parent):
                                                      pad=pad,
                                                      ncore=NCORE)
             t_end = timeit.default_timer()
-            print(f"\t Gridrec ran in {(t_end - t_start)/60} mns")
+            print(f"\t Gridrec ran in {(t_end - t_start)/60: 0.2f} mn")
+
+        if self.test_reconstruction_dict[ReconstructionAlgo.imars3d][GridRecParameters.use_this_method]:
+            print("\t> testing reconstruction using iMars3D:")
+
+            t_start = timeit.default_timer()
+            for slice in list_slices:
+                rec_img = recon(arrays=self.parent.proj_ring_removed,
+                                center=rot_center,
+                                theta=rot_angles_rad)
+            t_end = timeit.default_timer()
+            print(f"\t iMars3D ran in {(t_end - t_start)/60: 0.2f} mn")
 
         if self.test_reconstruction_dict[ReconstructionAlgo.astra][GridRecParameters.use_this_method]:
             print("\t> testing reconstruction using astra:")
@@ -267,7 +279,7 @@ class TestReconstruction(Parent):
 
             for slice in list_slices:
                 rec_img = rec.astra_reconstruction(sinogram[slice],
-                                                   rot_center[0],
+                                                   rot_center,
                                                    angles=rot_angles_rad,
                                                    apply_log=False,
                                                    method=algorithm,
@@ -278,7 +290,7 @@ class TestReconstruction(Parent):
                                                    ncore=NCORE)
 
             t_end = timeit.default_timer()
-            print(f"\t Gridrec ran in {(t_end - t_start)/60} mns")
+            print(f"\t Gridrec ran in {(t_end - t_start)/60} mn")
 
         if self.test_reconstruction_dict[ReconstructionAlgo.svmbir][GridRecParameters.use_this_method]:
             print("\t> testing reconstruction using svMBIR:")

@@ -44,6 +44,13 @@ class ReconstructionAlgo:
     svmbir = 'svmbir'
 
 
+class DefaultReconstructionAlgoToUse:
+    gridrec = False
+    imars3d = False
+    astra = True
+    svmbir = False
+
+
 class RecParameters:
     use_this_method = "use this method"
 
@@ -76,3 +83,6 @@ class SvmbirParameters(RecParameters):
     weight_type = 'weight type'
     verbose = 'verbose'
     temp_disk = 'temp disk'
+
+
+

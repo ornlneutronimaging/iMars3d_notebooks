@@ -308,6 +308,8 @@ class Imars3dui:
         self.o_test_reco.retrieving_parameters()
         self.o_test_reco.running_reconstruction_test()
 
+    def display_reconstruction_test(self):
+        pass
 
 
 
