@@ -1,3 +1,4 @@
+import copy
 import os
 import numpy as np
 import matplotlib.pyplot as plt
@@ -8,6 +9,7 @@ from __code import DataType
 from __code.parent import Parent
 from __code.file_folder_browser import FileFolderBrowser
 from __code.utilities.files import retrieve_list_of_files
+
 
 class Load(Parent):
 
@@ -44,6 +46,8 @@ class Load(Parent):
             load_data(ct_files=self.parent.input_files[DataType.raw],
                       ob_files=self.parent.input_files[DataType.ob],
                       dc_files=self.parent.input_files[DataType.dc]))
+
+        self.parent.untouched_sample_data = copy.deepcopy(self.parent.proj_raw)
 
         fig, (ax0, ax1, ax2) = plt.subplots(nrows=3, ncols=1, figsize=(5, 9))
         proj_min = np.min(self.parent.proj_raw, axis=0)

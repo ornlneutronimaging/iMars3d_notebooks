@@ -57,6 +57,8 @@ class LaminographyUi:
     input_data_folders = {}
     input_files = {}
 
+    untouched_sample_data = None
+
     rot_angles_rad = None
     rot_angles_deg = None
 

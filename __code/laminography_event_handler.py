@@ -81,16 +81,52 @@ class LaminographyEventHandler:
 
     def get_proj_params(self):
         proj_params = {}
+
         proj_params['type'] = "par"
 
         # row, angles, col
-        proj_tilt_corrected = self.parent.proj_tilt_corrected
-        print(f"{np.shape(proj_tilt_corrected) =}")
+        [angles, row, col] = np.shape(self.parent.proj_mlog)
+        proj_dim = np.array([row, angles, col])
+        proj_params['dims'] = proj_dim
 
-        # proj_params['dims'] = proj_dims
+        # angles
+        angles = self.parent.rot_angles_rad
+        proj_params['angles'] = angles
+
+        # alpha
+        laminography_angle_deg = self.laminography_angle_ui.value
+        laminography_angle_rad = np.deg2rad(laminography_angle_deg)
+        alpha = np.array([laminography_angle_rad])
+        proj_params['alpha'] = alpha
+
+        proj_params['forward_model_idx'] = 2
+
         return proj_params
 
+    def get_vol_params(self):
+        vol_params = {}
+
+        vox_xy = 1.0
+        vox_z = 1.0
+        n_vox_x = 256
+        n_vox_y = 256
+        n_vox_z = 256
+
+        vol_params['vox_xy'] = vox_xy
+        vol_params['vox_z'] = vox_z
+        vol_params['n_vox_x'] = n_vox_x
+        vol_params['n_vox_y'] = n_vox_y
+        vol_params['n_vox_z'] = n_vox_z
+
+        return vol_params
 
     def run(self):
+        proj_data = self.parent.proj_mlog
+
+        # raw data
+        weight_data =
+
         rec_params = self.get_rec_params()
         proj_params = self.get_proj_params()
+        vol_params = self.get_vol_params()
+
