@@ -6,6 +6,7 @@ from ipywidgets import widgets
 from IPython.display import display
 from IPython.core.display import HTML
 from IPython.display import clear_output
+import subprocess
 
 from __code.utilities.folder import find_first_real_dir
 
@@ -255,3 +256,18 @@ class System:
             return find_first_real_dir(cls.working_dir)
         else:
             return find_first_real_dir(os.path.join(cls.start_path, cls.working_dir_ui.value))
+
+
+    @classmethod
+    def get_number_of_gpu(cls):
+        try:
+            str_list_gpu = subprocess.run(["nvidia-smi", "-L"], stdout=subprocess.PIPE)
+            list_gpu = str_list_gpu.stdout.decode("utf-8").split("\n")
+            nbr_gpu = 0
+            for _gpu in list_gpu:
+                if not (_gpu == ""):
+                    nbr_gpu += 1
+            return nbr_gpu
+
+        except FileNotFoundError:
+            return 1

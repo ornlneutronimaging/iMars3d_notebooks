@@ -52,7 +52,7 @@ default_input_folder = {DataType.raw: 'ct_scans',
                         DataType.dc: 'dc'}
 
 
-class Imars3dui:
+class LaminographyUi:
 
     input_data_folders = {}
     input_files = {}
