@@ -1,6 +1,9 @@
 import ipywidgets as widgets
 import numpy as np
 from IPython.display import display
+from ipywidgets import interactive
+import matplotlib.pyplot as plt
+import time
 
 from tomoORNL.reconEngine import MBIR
 from imars3d.backend.morph.crop import crop
@@ -10,6 +13,12 @@ from __code.system import System
 
 
 class LaminographyEventHandler:
+
+    huber_t = 5
+    huber_delta = 0.1
+    sigma = 1
+    reject_frac = 0.1
+    debug = False
 
     det_x = 1.0
     det_y = 1.0
@@ -62,19 +71,8 @@ class LaminographyEventHandler:
                              self.verbose_ui,
                              ])
 
-        self.huber_t_ui = widgets.FloatText(value=5, description="Huber T")
-        self.huber_delta_ui = widgets.FloatText(value=0.1, description="Huber delta")
-        self.sigma_ui = widgets.FloatText(value=1, description="Sigma")
-        self.reject_frac_ui = widgets.FloatText(value=0.1, description="Reject. frac.")
-        self.debug_ui = widgets.Checkbox(value=False, description="Debug")
-        tab3 = widgets.VBox([self.huber_t_ui,
-                             self.huber_delta_ui,
-                             self.sigma_ui,
-                             self.reject_frac_ui,
-                             self.debug_ui])
-
-        tab = widgets.Tab([tab1, tab2, tab3])
-        tab.titles = ["Laminography angle", "Settings", "Advanced settings"]
+        tab = widgets.Tab([tab1, tab2])
+        tab.titles = ["Laminography angle", "Advanced settings"]
         display(tab)
 
     def get_gpu_index(self):
@@ -91,13 +89,15 @@ class LaminographyEventHandler:
         rec_params['gpu_index'] = self.get_gpu_index()
         rec_params['MRF_P'] = self.mrf_p_ui.value
         rec_params['MRF_SIGMA'] = self.mrf_sigma_ui.value
-        rec_params['huber_T'] = self.huber_t_ui.value
-        rec_params['huber_delta'] = self.huber_delta_ui.value
-        rec_params['sigma'] = self.sigma_ui.value
-        rec_params['reject_frac'] = self.reject_frac_ui.value
+        rec_params['huber_T'] = self.huber_t
+        rec_params['huber_delta'] = self.huber_delta
+        rec_params['sigma'] = self.sigma
+        rec_params['reject_frac'] = self.reject_frac
         rec_params['verbose'] = self.verbose_ui.value
-        rec_params['debug'] = self.debug_ui.value
+        rec_params['debug'] = self.debug
         rec_params['stop_thresh'] = self.stop_threshold_ui.value
+
+        return rec_params
 
     def get_proj_params(self):
         proj_params = {}
@@ -128,49 +128,67 @@ class LaminographyEventHandler:
     def get_vol_params(self):
         vol_params = {}
 
+        [_, height, width] = np.shape(self.parent.proj_tilt_corrected)
+
         vol_params['vox_xy'] = self.vox_xy
         vol_params['vox_z'] = self.vox_z
-        vol_params['n_vox_x'] = self.n_vox_x
-        vol_params['n_vox_y'] = self.n_vox_y
-        vol_params['n_vox_z'] = self.n_vox_z
+        vol_params['n_vox_x'] = width
+        vol_params['n_vox_y'] = width
+        vol_params['n_vox_z'] = height
 
         return vol_params
 
-    def miscalib(self):
+    def get_miscalib(self):
         miscalib = {}
 
         # rotation center
         rot_center_pixel = self.parent.rot_center[0]
         nbr_col = self.nbr_col
-        off_center_u = rot_center_pixel - nbr_col/2
+        off_center_u = nbr_col/2 - rot_center_pixel
         miscalib["delta_u"] = off_center_u * self.det_x
 
         off_center_v = 0
         miscalib["delta_v"] = off_center_v * self.det_y
 
         # tilt_value
-        tilt_algo_selected = self.parent.tilt_algo_selected_finally
-        tilt_value_deg = self.parent.dict_tilt_values[tilt_algo_selected]
-        tilt_value_rad = np.deg2rad(tilt_value_deg)
-        miscalib["phi"] = tilt_value_rad
+        # tilt_algo_selected = self.parent.tilt_algo_selected_finally
+        # tilt_value_deg = self.parent.dict_tilt_values[tilt_algo_selected]
+        # tilt_value_rad = np.deg2rad(tilt_value_deg)
+        miscalib["phi"] = 0
 
         return miscalib
 
     def run(self):
 
         # change the axis order from [angles, row, columns] to [row, angles, columns]
-        proj_data = np.moveaxis(self.parent.proj_mlog, 1, 0)
+        proj_data = np.moveaxis(self.parent.proj_tilt_corrected, 1, 0)
 
-        # raw data
-        weight_data_raw = np.moveaxis(self.parent.untouched_sample_data, 1, 0)
         # crop raw data (just it was done for proj_data
         crop_region = self.parent.crop_region
-        weight_data = crop(arrays=weight_data_raw,
-                           crop_limit=crop_region)
+        weight_data_raw = crop(arrays=self.parent.untouched_sample_data,
+                               crop_limit=crop_region)
+        weight_data = np.moveaxis(weight_data_raw, 1, 0)
 
         rec_params = self.get_rec_params()
         proj_params = self.get_proj_params()
         vol_params = self.get_vol_params()
         miscalib = self.get_miscalib()
 
+        start_time = time.time()
         self.parent.recon_mbir = MBIR(proj_data, weight_data, proj_params, miscalib, vol_params, rec_params)
+        end_time = time.time()
+        print(f"Laminography reconstruction ran in {end_time - start_time:.2f}s")
+
+    def visualize(self):
+
+        def plot_final_volume(index):
+            fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(10, 10))
+            ax.imshow(self.parent.recon_mbir[:, index, :])
+
+        [dim1, dim2, dim3] = np.shape(self.parent.recon_mbir)
+
+        display_volume = interactive(plot_final_volume,
+                                     index=widgets.IntSlider(min=0, 
+                                                             max=dim2-1,
+                                                             continuous_update=False))
+        display(display_volume)

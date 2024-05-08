@@ -2,7 +2,8 @@ import os
 import glob
 import matplotlib.pyplot as plt
 import numpy as np
-import timeit
+#import timeit
+import time
 from ipywidgets import interactive
 import ipywidgets as widgets
 from IPython.display import display
@@ -272,14 +273,16 @@ class Imars3dui:
 
     def rotation_center(self):
         print(f"Running rotation center ...")
-        t0 = timeit.default_timer()
+        # t0 = timeit.default_timer()
+        t0 = time.time()
         self.rot_center = find_rotation_center(arrays=self.proj_tilt_corrected,
                                                angles=self.rot_angles,
                                                num_pairs=-1,
                                                in_degrees=True,
                                                atol_deg=self.mean_delta_angle,
                                                )
-        t1 = timeit.default_timer()
+        t1 = time.time()
+        # t1 = timeit.default_timer()
         print(f"rotation center found in {t1-t0:.2f}s")
         print(f" - value: {self.rot_center}")
 
@@ -321,15 +324,18 @@ class Imars3dui:
         pass
 
     # Laminography
-    def laminography_settings(self):
-        self.o_event_laminography_settings = LaminographyEventHandler(parent=self)
-        self.o_event_laminography_settings.set_settings()
+    # def laminography_settings(self):
+    #     self.o_event_laminography_settings = LaminographyEventHandler(parent=self)
+    #     self.o_event_laminography_settings.set_settings()
 
-    def run_laminography(self):
-        self.o_event_laminography_settings.run()
+    # def run_laminography(self):
+    #     self.o_event_laminography_settings.run()
+
+    # def visualize_reconstruction(self):
+    #     self.o_event_laminography_settings.visualize()
 
     def reconstruction_and_display(self):
-        t0 = timeit.default_timer()
+        t0 = time.time()
         print("Running reconstruction ...")
 
         # converting angles from deg to radians
@@ -341,7 +347,7 @@ class Imars3dui:
                                     )
 
         print(" reconstruction done!")
-        t1 = timeit.default_timer()
+        t1 = time.time()
         print(f"time= {t1 - t0:.2f}s")
 
         plt.figure()

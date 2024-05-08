@@ -3,6 +3,7 @@ import glob
 import matplotlib.pyplot as plt
 import numpy as np
 import timeit
+import time
 from ipywidgets import interactive
 import ipywidgets as widgets
 from IPython.display import display
@@ -279,14 +280,16 @@ class LaminographyUi:
 
     def rotation_center(self):
         print(f"Running rotation center ...")
-        t0 = timeit.default_timer()
+        # t0 = timeit.default_timer()
+        t0 = time.time()
         self.rot_center = find_rotation_center(arrays=self.proj_tilt_corrected,
                                                angles=self.rot_angles,
                                                num_pairs=-1,
                                                in_degrees=True,
                                                atol_deg=self.mean_delta_angle,
                                                )
-        t1 = timeit.default_timer()
+        # t1 = timeit.default_timer()
+        t1 = time.time()
         print(f"rotation center found in {t1-t0:.2f}s")
         print(f" - value: {self.rot_center}")
 
@@ -335,37 +338,40 @@ class LaminographyUi:
     def run_laminography(self):
         self.o_event_laminography_settings.run()
 
-    def reconstruction_and_display(self):
-        t0 = timeit.default_timer()
-        print("Running reconstruction ...")
+    def visualize_reconstruction(self):
+        self.o_event_laminography_settings.visualize()
 
-        # converting angles from deg to radians
-        rot_ang_rad = np.radians(self.rot_angles)
+    # def reconstruction_and_display(self):
+    #     t0 = timeit.default_timer()
+    #     print("Running reconstruction ...")
 
-        self.reconstruction = recon(arrays=self.proj_strikes_removed,
-                                    center=self.rot_center[0],
-                                    theta=rot_ang_rad,
-                                    )
+    #     # converting angles from deg to radians
+    #     rot_ang_rad = np.radians(self.rot_angles)
 
-        print(" reconstruction done!")
-        t1 = timeit.default_timer()
-        print(f"time= {t1 - t0:.2f}s")
+    #     self.reconstruction = recon(arrays=self.proj_strikes_removed,
+    #                                 center=self.rot_center[0],
+    #                                 theta=rot_ang_rad,
+    #                                 )
 
-        plt.figure()
-        plt.imshow(self.reconstruction[0])
-        plt.colorbar()
-        plt.show()
+    #     print(" reconstruction done!")
+    #     t1 = timeit.default_timer()
+    #     print(f"time= {t1 - t0:.2f}s")
 
-        def plot_reconstruction(index):
-            plt.title(f"Reconstructed slice #{index}")
-            plt.imshow(self.reconstruction[index])
-            plt.show()
+    #     plt.figure()
+    #     plt.imshow(self.reconstruction[0])
+    #     plt.colorbar()
+    #     plt.show()
 
-        plot_reconstruction_ui = interactive(plot_reconstruction,
-                                             index=widgets.IntSlider(min=0,
-                                                                     max=len(self.reconstruction),
-                                                                     value=0))
-        display(plot_reconstruction_ui)
+    #     def plot_reconstruction(index):
+    #         plt.title(f"Reconstructed slice #{index}")
+    #         plt.imshow(self.reconstruction[index])
+    #         plt.show()
+
+    #     plot_reconstruction_ui = interactive(plot_reconstruction,
+    #                                          index=widgets.IntSlider(min=0,
+    #                                                                  max=len(self.reconstruction),
+    #                                                                  value=0))
+    #     display(plot_reconstruction_ui)
 
     def export(self):
         working_dir = os.path.join(self.working_dir, "shared", "processed_data")
@@ -378,6 +384,6 @@ class LaminographyUi:
 
     def export_data(self, folder):
         print(f"New folder will be created in {folder} and called {self.input_folder_base_name}_YYYYMMDDHHMM")
-        save_data(data=np.asarray(self.reconstruction),
+        save_data(data=np.asarray(self.recon_mbir),
                   outputbase=folder,
                   name=self.input_folder_base_name)
