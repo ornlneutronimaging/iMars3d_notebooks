@@ -96,6 +96,9 @@ class LaminographyUi:
     sinogram_before_ring_removal = None
     sinogram_after_ring_removal = None
 
+    # final reconstruction volume
+    recon_mbir = None
+
     def __init__(self, working_dir="./"):
         # working_dir = self.find_first_real_dir(start_dir=working_dir)
         self.working_dir = os.path.join(working_dir, 'raw', default_input_folder[DataType.raw])
@@ -142,6 +145,7 @@ class LaminographyUi:
 
     def perform_embedded_cropping(self):
         crop_region = list(self.cropping.result)
+        self.crop_region = crop_region
         o_crop = Crop(parent=self)
         o_crop.crop_region(crop_region)
 
@@ -229,6 +233,7 @@ class LaminographyUi:
 
     def display_with_tilt(self):
         algo_selected = self.o_tilt.test_tilt.result
+        self.tilt_algo_selected_finally = algo_selected
         self.proj_tilt_corrected = self.o_tilt.test_tilt_reconstruction[algo_selected][TiltTestKeys.raw_3d]
         self.rot_center = self.o_tilt.test_tilt_reconstruction[algo_selected][TiltTestKeys.center_of_rotation]
         self.o_tilt.display_tilt()

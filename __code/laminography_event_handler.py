@@ -2,7 +2,8 @@ import ipywidgets as widgets
 import numpy as np
 from IPython.display import display
 
-# from tomoORNL.reconEngine import MBIR
+from tomoORNL.reconEngine import MBIR
+from imars3d.backend.morph.crop import crop
 
 
 from __code.system import System
@@ -10,8 +11,27 @@ from __code.system import System
 
 class LaminographyEventHandler:
 
+    det_x = 1.0
+    det_y = 1.0
+
+    forward_model_idx = 2
+
+    vox_xy = 1.0
+    vox_z = 1.0
+    n_vox_x = 256
+    n_vox_y = 256
+    n_vox_z = 256
+
+    off_center_u = 0  # Center of rotation offset in units of pixels
+    off_center_v = 0
+
+    nbr_angles = 0
+    nbr_row = 0
+    nbr_col = 0
+
     def __init__(self, parent=None):
         self.parent = parent
+        [self.nbr_angles, self.nbr_row, self.nbr_col] = np.shape(self.parent.proj_mlog)
 
     def set_settings(self):
         self.laminography_angle_ui = widgets.FloatSlider(min=0, max=90, value=20, step=0.01)
@@ -85,8 +105,7 @@ class LaminographyEventHandler:
         proj_params['type'] = "par"
 
         # row, angles, col
-        [angles, row, col] = np.shape(self.parent.proj_mlog)
-        proj_dim = np.array([row, angles, col])
+        proj_dim = np.array([self.nbr_row, self.nbr_angles, self.nbr_col])
         proj_params['dims'] = proj_dim
 
         # angles
@@ -99,34 +118,59 @@ class LaminographyEventHandler:
         alpha = np.array([laminography_angle_rad])
         proj_params['alpha'] = alpha
 
-        proj_params['forward_model_idx'] = 2
+        proj_params['forward_model_idx'] = self.forward_model_idx
+
+        proj_params['pix_x'] = self.det_x
+        proj_params['pix_y'] = self.det_y
 
         return proj_params
 
     def get_vol_params(self):
         vol_params = {}
 
-        vox_xy = 1.0
-        vox_z = 1.0
-        n_vox_x = 256
-        n_vox_y = 256
-        n_vox_z = 256
-
-        vol_params['vox_xy'] = vox_xy
-        vol_params['vox_z'] = vox_z
-        vol_params['n_vox_x'] = n_vox_x
-        vol_params['n_vox_y'] = n_vox_y
-        vol_params['n_vox_z'] = n_vox_z
+        vol_params['vox_xy'] = self.vox_xy
+        vol_params['vox_z'] = self.vox_z
+        vol_params['n_vox_x'] = self.n_vox_x
+        vol_params['n_vox_y'] = self.n_vox_y
+        vol_params['n_vox_z'] = self.n_vox_z
 
         return vol_params
 
+    def miscalib(self):
+        miscalib = {}
+
+        # rotation center
+        rot_center_pixel = self.parent.rot_center[0]
+        nbr_col = self.nbr_col
+        off_center_u = rot_center_pixel - nbr_col/2
+        miscalib["delta_u"] = off_center_u * self.det_x
+
+        off_center_v = 0
+        miscalib["delta_v"] = off_center_v * self.det_y
+
+        # tilt_value
+        tilt_algo_selected = self.parent.tilt_algo_selected_finally
+        tilt_value_deg = self.parent.dict_tilt_values[tilt_algo_selected]
+        tilt_value_rad = np.deg2rad(tilt_value_deg)
+        miscalib["phi"] = tilt_value_rad
+
+        return miscalib
+
     def run(self):
-        proj_data = self.parent.proj_mlog
+
+        # change the axis order from [angles, row, columns] to [row, angles, columns]
+        proj_data = np.moveaxis(self.parent.proj_mlog, 1, 0)
 
         # raw data
-        weight_data =
+        weight_data_raw = np.moveaxis(self.parent.untouched_sample_data, 1, 0)
+        # crop raw data (just it was done for proj_data
+        crop_region = self.parent.crop_region
+        weight_data = crop(arrays=weight_data_raw,
+                           crop_limit=crop_region)
 
         rec_params = self.get_rec_params()
         proj_params = self.get_proj_params()
         vol_params = self.get_vol_params()
+        miscalib = self.get_miscalib()
 
+        self.parent.recon_mbir = MBIR(proj_data, weight_data, proj_params, miscalib, vol_params, rec_params)
