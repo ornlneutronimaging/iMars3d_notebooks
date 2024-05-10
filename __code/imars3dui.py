@@ -43,7 +43,6 @@ from __code.workflow.reconstruction import TestReconstruction
 from __code.workflow.ring_removal import RingRemoval
 from __code.workflow.filters import Filters
 from __code.workflow.sinogram import Sinogram
-from __code.laminography_event_handler import LaminographyEventHandler
 
 from __code.file_folder_browser import FileFolderBrowser
 from __code.display import Display
@@ -322,17 +321,6 @@ class Imars3dui:
 
     def display_reconstruction_test(self):
         pass
-
-    # Laminography
-    # def laminography_settings(self):
-    #     self.o_event_laminography_settings = LaminographyEventHandler(parent=self)
-    #     self.o_event_laminography_settings.set_settings()
-
-    # def run_laminography(self):
-    #     self.o_event_laminography_settings.run()
-
-    # def visualize_reconstruction(self):
-    #     self.o_event_laminography_settings.visualize()
 
     def reconstruction_and_display(self):
         t0 = time.time()
