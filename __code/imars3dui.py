@@ -12,12 +12,6 @@ import multiprocessing as mp
 import warnings
 warnings.filterwarnings('ignore')
 
-from imars3d.backend.dataio.data import load_data
-from imars3d.backend.morph.crop import crop
-from imars3d.backend.corrections.gamma_filter import gamma_filter
-from imars3d.backend.preparation.normalization import normalization
-from imars3d.backend.diagnostics import tilt
-# from imars3d.backend.dataio.data import _get_filelist_by_dir
 from imars3d.backend.diagnostics.rotation import find_rotation_center
 
 try:
@@ -28,7 +22,6 @@ except OSError:
 
 from imars3d.backend.reconstruction import recon
 from imars3d.backend.dataio.data import save_data
-from imars3d.backend.corrections.intensity_fluctuation_correction import normalize_roi
 
 from __code import DataType, TiltAlgorithms, TiltTestKeys, config
 
@@ -53,6 +46,11 @@ default_input_folder = {DataType.raw: 'ct_scans',
 
 
 class Imars3dui:
+
+    working_dir = {DataType.raw: "",
+                   DataType.ob: "",
+                   DataType.dc: "",
+                   }
 
     input_data_folders = {}
     input_files = {}
@@ -95,8 +93,10 @@ class Imars3dui:
     sinogram_after_ring_removal = None
 
     def __init__(self, working_dir="./"):
-        # working_dir = self.find_first_real_dir(start_dir=working_dir)
-        self.working_dir = os.path.join(working_dir, 'raw', default_input_folder[DataType.raw])
+        init_path_to_raw = os.path.join(working_dir, 'raw')
+        self.working_dir[DataType.raw] = os.path.join(init_path_to_raw, default_input_folder[DataType.raw])
+        self.working_dir[DataType.ob] = os.path.join(init_path_to_raw, default_input_folder[DataType.ob])
+        self.working_dir[DataType.dc] = os.path.join(init_path_to_raw, default_input_folder[DataType.dc])
 
     # SELECT INPUT DATA ===============================================================================================
     def select_raw(self):

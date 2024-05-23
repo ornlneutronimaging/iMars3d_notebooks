@@ -55,6 +55,11 @@ default_input_folder = {DataType.raw: 'ct_scans',
 
 class LaminographyUi:
 
+    working_dir = {DataType.raw: "",
+                   DataType.ob: "",
+                   DataType.dc: "",
+                   }
+
     input_data_folders = {}
     input_files = {}
 
@@ -101,8 +106,10 @@ class LaminographyUi:
     recon_mbir = None
 
     def __init__(self, working_dir="./"):
-        # working_dir = self.find_first_real_dir(start_dir=working_dir)
-        self.working_dir = os.path.join(working_dir, 'raw', default_input_folder[DataType.raw])
+        init_path_to_raw = os.path.join(working_dir, 'raw')
+        self.working_dir[DataType.raw] = os.path.join(init_path_to_raw, default_input_folder[DataType.raw])
+        self.working_dir[DataType.ob] = os.path.join(init_path_to_raw, default_input_folder[DataType.ob])
+        self.working_dir[DataType.dc] = os.path.join(init_path_to_raw, default_input_folder[DataType.dc])
 
     # SELECT INPUT DATA ===============================================================================================
     def select_raw(self):

@@ -16,10 +16,11 @@ class Load(Parent):
     def select_folder(self, data_type=DataType.raw, multiple_flag=False):
         self.parent.current_data_type = data_type
 
-        if not os.path.exists(self.parent.working_dir):
-            self.parent.working_dir = os.path.abspath(os.path.expanduser("~"))
+        working_dir = self.parent.working_dir[data_type]
+        if not os.path.exists(working_dir):
+            working_dir = os.path.abspath(os.path.expanduser("~"))
 
-        o_file_browser = FileFolderBrowser(working_dir=self.parent.working_dir,
+        o_file_browser = FileFolderBrowser(working_dir=working_dir,
                                            next_function=self.data_selected)
         o_file_browser.select_input_folder(instruction=f"Select Folder of {data_type}",
                                            multiple_flag=multiple_flag)
