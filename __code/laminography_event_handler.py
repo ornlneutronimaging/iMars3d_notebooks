@@ -8,8 +8,9 @@ import time
 from tomoORNL.reconEngine import MBIR
 from imars3d.backend.morph.crop import crop
 
-
 from __code.system import System
+from __code.utilities.files import save_json
+from __code.utilities.time import convert_time_s_in_time_hr_mn_s
 
 
 class LaminographyEventHandler:
@@ -38,9 +39,14 @@ class LaminographyEventHandler:
     nbr_row = 0
     nbr_col = 0
 
+    _proj_mlog = None
+
     def __init__(self, parent=None):
         self.parent = parent
-        [self.nbr_angles, self.nbr_row, self.nbr_col] = np.shape(self.parent.proj_mlog)
+
+        self.z_top, self.z_bottom = list(self.parent.z_range_selection.result)
+        self._proj_mlog = self.parent.proj_mlog[self.z_top: self.z_bottom, :, :]
+        [self.nbr_angles, self.nbr_row, self.nbr_col] = np.shape(self._proj_mlog)
 
     def set_settings(self):
         self.laminography_angle_ui = widgets.FloatSlider(min=0, max=90, value=20, step=0.01)
@@ -128,7 +134,7 @@ class LaminographyEventHandler:
     def get_vol_params(self):
         vol_params = {}
 
-        [_, height, width] = np.shape(self.parent.proj_tilt_corrected)
+        [height, _, width] = np.shape(self._proj_data)
 
         vol_params['vox_xy'] = self.vox_xy
         vol_params['vox_z'] = self.vox_z
@@ -161,23 +167,53 @@ class LaminographyEventHandler:
     def run(self):
 
         # change the axis order from [angles, row, columns] to [row, angles, columns]
-        proj_data = np.moveaxis(self.parent.proj_tilt_corrected, 1, 0)
+        # proj_data = np.moveaxis(self.parent.proj_tilt_corrected, 1, 0)
+        proj_data = self.parent.proj_tilt_corrected.swapaxes(0, 1)
+        self._proj_data = proj_data[self.z_top: self.z_bottom, :, :]
 
         # crop raw data (just it was done for proj_data
         crop_region = self.parent.crop_region
         weight_data_raw = crop(arrays=self.parent.untouched_sample_data,
                                crop_limit=crop_region)
-        weight_data = np.moveaxis(weight_data_raw, 1, 0)
+        # weight_data = np.moveaxis(weight_data_raw, 1, 0)
+        weight_data = weight_data_raw.swapaxes(0, 1)
+        self._weight_data = weight_data[self.z_top: self.z_bottom, :, :]
 
         rec_params = self.get_rec_params()
         proj_params = self.get_proj_params()
         vol_params = self.get_vol_params()
         miscalib = self.get_miscalib()
 
+        debug_json = {'size of data': np.shape(self._proj_data),
+                      'size of weight': np.shape(self._weight_data),
+                      'proj_params': proj_params,
+                      'miscalib': miscalib,
+                      'vol_params': vol_params,
+                      'rec_params': rec_params,
+                      }
+        # json_file_name = '/SNS/users/j35/debug_laminography.json'
+        # save_json(json_dictionary=debug_json, json_file_name=json_file_name)
+        # import pprint
+        # pprint.pprint(f"{debug_json =}")
+
         start_time = time.time()
-        self.parent.recon_mbir = MBIR(proj_data, weight_data, proj_params, miscalib, vol_params, rec_params)
+
+        print(f"{np.shape(self._proj_data)= }")
+        print(f"{np.shape(self._weight_data)= }")
+        print(f"{proj_params =}")
+        print(f"{miscalib =}")
+        print(f"{vol_params =}")
+        print(f"{rec_params =}")
+
+        self.parent.recon_mbir = MBIR(self._proj_data, 
+                                      self._weight_data, 
+                                      proj_params, 
+                                      miscalib, 
+                                      vol_params, 
+                                      rec_params)
         end_time = time.time()
-        print(f"Laminography reconstruction ran in {end_time - start_time:.2f}s")
+        delta_time = end_time - start_time
+        print(f"Laminography reconstruction ran in {convert_time_s_in_time_hr_mn_s(delta_time)}")
 
     def visualize(self):
 

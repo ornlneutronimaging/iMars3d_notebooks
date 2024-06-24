@@ -43,6 +43,7 @@ from __code.workflow.reconstruction import TestReconstruction
 from __code.workflow.ring_removal import RingRemoval
 from __code.workflow.filters import Filters
 from __code.workflow.sinogram import Sinogram
+from __code.workflow.select_z_range import SelectZRange
 from __code.laminography_event_handler import LaminographyEventHandler
 
 from __code.file_folder_browser import FileFolderBrowser
@@ -156,10 +157,6 @@ class LaminographyUi:
         self.crop_region = crop_region
         o_crop = Crop(parent=self)
         o_crop.crop_region(crop_region)
-
-    def perform_cropping(self):
-        crop_region = self.crop_region
-        self._crop_region(crop_region=crop_region)
 
     # GAMMA_FILTERING =====================================================================================
 
@@ -333,6 +330,10 @@ class LaminographyUi:
     def running_reconstruction_test(self):
         self.o_test_reco.retrieving_parameters()
         self.o_test_reco.running_reconstruction_test()
+
+    def select_range_of_slices(self):
+        o_select = SelectZRange(parent=self)
+        o_select.select_range_of_slices()
 
     def display_reconstruction_test(self):
         pass

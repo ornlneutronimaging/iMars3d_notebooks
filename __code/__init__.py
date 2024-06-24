@@ -15,6 +15,7 @@ class DataType:
     raw = 'raw'
     ob = 'ob'
     dc = 'dc'
+    ipts = 'ipts'
 
 
 default_input_folder = {DataType.raw: 'ct_scans',
