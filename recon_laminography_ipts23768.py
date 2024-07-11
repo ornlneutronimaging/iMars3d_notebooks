@@ -110,6 +110,7 @@ print(count_data.shape)
 
 proj_data = norm_data 
 
+
 det_row,num_angles,det_col=proj_data.shape
 proj_dims=np.array([det_row,num_angles,det_col])
 
@@ -134,19 +135,20 @@ print('Estimated center of rotation %f' %rot_center_est)
 
 
 t=time.time()
-print('Starting ASTRA-FBP..')
-rec_fbp=np.float32(analytic(proj_data,proj_params,miscalib,vol_params,rec_params))
-t_fbp=time.time()-t
-print('Time for FBP %f' % t_fbp)
-if write_output == True:
-    dxchange.write_tiff_stack(rec_fbp, fname=fbp_fname, start=z_start,overwrite=True)
+#print('Starting ASTRA-FBP..')
+#rec_fbp=np.float32(analytic(proj_data,proj_params,miscalib,vol_params,rec_params))
+#t_fbp=time.time()-t
+#print('Time for FBP %f' % t_fbp)
+#if write_output == True:
+#    dxchange.write_tiff_stack(rec_fbp, fname=fbp_fname, start=z_start,overwrite=True)
 
 
 #print('Starting MBIR..')
 #rec_mbir=np.float32(MBIR(proj_data,count_data,proj_params,miscalib,vol_params,rec_params))
 
-#if write_output == True:
-#    dxchange.write_tiff_stack(rec_mbir, fname=mbir_fname, start=z_start,overwrite=True)
+if write_output == True:
+    data_to_export = proj_data.swapaxes(1, 0)
+    dxchange.write_tiff_stack(data_to_export, fname=mbir_fname, start=0, overwrite=True)
 
 #if display_output == True:
 #    plot_cross_section(rec_fbp,plt_title='FBP')

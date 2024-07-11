@@ -135,7 +135,7 @@ class Tilt(Parent):
         self.parent.index_180_degree = self.parent.right_select.index
 
         # calculate the tilt using all 3 methods and let the user chose the one he wants to apply on the data
-        display(HTML('<span style="font-size: 15px; color:blue">Select the tilt value you want to use:</span>'))
+        display(HTML('<span style="font-size: 15px; color:blue">Select the tilt value you want to evaluate:</span>'))
 
         line1 = widgets.HBox([widgets.Checkbox(value=True,
                                                description="Direct minimization"),

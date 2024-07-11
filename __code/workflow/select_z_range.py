@@ -10,7 +10,7 @@ from __code.parent import Parent
 class SelectZRange(Parent):
 
     def select_range_of_slices(self):
-        list_images = self.parent.proj_raw
+        list_images = self.parent.proj_tilt_corrected
         integrated_image = np.mean(list_images, axis=0)
         height, width = np.shape(integrated_image)
 

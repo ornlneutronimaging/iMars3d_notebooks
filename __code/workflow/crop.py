@@ -32,7 +32,7 @@ class Crop(Parent):
             ax.axhline(top, color='blue', linestyle='--')
             ax.axhline(bottom, color='red', linestyle='--')
 
-            return left, right, top, bottom
+            return left, right+1, top, bottom+1
 
         self.parent.cropping = interactive(plot_crop,
                                             left=widgets.IntSlider(min=0,

@@ -108,6 +108,7 @@ class LaminographyUi:
 
     def __init__(self, working_dir="./"):
         init_path_to_raw = os.path.join(working_dir, 'raw')
+        self.working_dir[DataType.ipts] = working_dir
         self.working_dir[DataType.raw] = os.path.join(init_path_to_raw, default_input_folder[DataType.raw])
         self.working_dir[DataType.ob] = os.path.join(init_path_to_raw, default_input_folder[DataType.ob])
         self.working_dir[DataType.dc] = os.path.join(init_path_to_raw, default_input_folder[DataType.dc])
@@ -382,7 +383,7 @@ class LaminographyUi:
     #     display(plot_reconstruction_ui)
 
     def export(self):
-        working_dir = os.path.join(self.working_dir, "shared", "processed_data")
+        working_dir = os.path.join(self.working_dir[DataType.ipts], "shared", "processed_data")
         if not os.path.exists(working_dir):
             working_dir = self.working_dir
 
@@ -395,3 +396,4 @@ class LaminographyUi:
         save_data(data=np.asarray(self.recon_mbir),
                   outputbase=folder,
                   name=self.input_folder_base_name)
+        print(f"Done!")

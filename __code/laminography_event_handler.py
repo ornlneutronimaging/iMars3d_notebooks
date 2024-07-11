@@ -7,6 +7,7 @@ import time
 
 from tomoORNL.reconEngine import MBIR
 from imars3d.backend.morph.crop import crop
+from imars3d.backend.dataio.data import save_data
 
 from __code.system import System
 from __code.utilities.files import save_json
@@ -95,13 +96,15 @@ class LaminographyEventHandler:
         rec_params['gpu_index'] = self.get_gpu_index()
         rec_params['MRF_P'] = self.mrf_p_ui.value
         rec_params['MRF_SIGMA'] = self.mrf_sigma_ui.value
-        rec_params['huber_T'] = self.huber_t
-        rec_params['huber_delta'] = self.huber_delta
-        rec_params['sigma'] = self.sigma
-        rec_params['reject_frac'] = self.reject_frac
+        # rec_params['huber_T'] = self.huber_t
+        # rec_params['huber_delta'] = self.huber_delta
+        # rec_params['sigma'] = self.sigma
+        # rec_params['reject_frac'] = self.reject_frac
         rec_params['verbose'] = self.verbose_ui.value
         rec_params['debug'] = self.debug
         rec_params['stop_thresh'] = self.stop_threshold_ui.value
+        rec_params['filt_cutoff'] = 0.5
+        rec_params['filt_type'] = 'Ram-Lak'
 
         return rec_params
 
@@ -111,7 +114,8 @@ class LaminographyEventHandler:
         proj_params['type'] = "par"
 
         # row, angles, col
-        proj_dim = np.array([self.nbr_row, self.nbr_angles, self.nbr_col])
+        # proj_dim = np.array([self.nbr_row, self.nbr_angles, self.nbr_col])
+        proj_dim = np.shape(self._proj_data)
         proj_params['dims'] = proj_dim
 
         # angles
@@ -152,6 +156,9 @@ class LaminographyEventHandler:
         nbr_col = self.nbr_col
         off_center_u = nbr_col/2 - rot_center_pixel
         miscalib["delta_u"] = off_center_u * self.det_x
+        
+        #DEBUGGING
+        miscalib["delta_u"] = -200
 
         off_center_v = 0
         miscalib["delta_v"] = off_center_v * self.det_y
@@ -198,12 +205,13 @@ class LaminographyEventHandler:
 
         start_time = time.time()
 
-        print(f"{np.shape(self._proj_data)= }")
-        print(f"{np.shape(self._weight_data)= }")
-        print(f"{proj_params =}")
-        print(f"{miscalib =}")
-        print(f"{vol_params =}")
-        print(f"{rec_params =}")
+        # print(f"{np.shape(self._proj_data)= }")
+        # print(f"{np.shape(self._weight_data)= }")
+
+        # print(f"{proj_params =}")
+        # print(f"{miscalib =}")
+        # print(f"{vol_params =}")
+        # print(f"{rec_params =}")
 
         self.parent.recon_mbir = MBIR(self._proj_data, 
                                       self._weight_data, 
@@ -215,16 +223,38 @@ class LaminographyEventHandler:
         delta_time = end_time - start_time
         print(f"Laminography reconstruction ran in {convert_time_s_in_time_hr_mn_s(delta_time)}")
 
+        self.export_data_for_debugging(data_to_export=self.parent.recon_mbir)
+
     def visualize(self):
+
+        # recon_mbir = self.parent.recon_mbir.swapaxes(0, 1)
+        recon_mbir = self.parent.recon_mbir
+        [dim1, _, _] = np.shape(recon_mbir)
 
         def plot_final_volume(index):
             fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(10, 10))
-            ax.imshow(self.parent.recon_mbir[:, index, :])
-
-        [dim1, dim2, dim3] = np.shape(self.parent.recon_mbir)
+            ax.imshow(recon_mbir[index, :, :])
 
         display_volume = interactive(plot_final_volume,
                                      index=widgets.IntSlider(min=0, 
-                                                             max=dim2-1,
+                                                             max=dim1-1,
                                                              continuous_update=False))
         display(display_volume)
+
+    def export_data_for_debugging(self, data_to_export=None):
+        print("Exporting data for debugging only")
+        outputbase = "/HFIR/CG1D/IPTS-23768/shared/processed_data/jean/"
+        folder_name = "data_created_by_notebook"
+
+        print(f"before swap: {np.shape(data_to_export) =}")
+
+        # switch back to [index, y, x]
+        data_to_export = data_to_export.swapaxes(1, 0)
+
+        print(f"after swap: {np.shape(data_to_export) =}")
+
+        save_data(data=data_to_export,
+                outputbase=outputbase,
+                name=folder_name)
+        
+        print("Done!")

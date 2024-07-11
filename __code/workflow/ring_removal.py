@@ -63,7 +63,7 @@ class RingRemoval(Parent):
         if self.ring_removal_ui.children[2].value:
             t0 = timeit.default_timer()
             print("Running strikes removal using Ketcham ...")
-            self.proj_strikes_removal_3 = remove_ring_artifact(arrays=self.proj_ring_removal_2,
+            self.proj_ring_removal_3 = remove_ring_artifact(arrays=self.proj_ring_removal_2,
                                                                kernel_size=5,
                                                                max_workers=NCORE)
             print(" strikes removal done!")
