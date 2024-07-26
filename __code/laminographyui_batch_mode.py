@@ -53,8 +53,12 @@ default_input_folder = {DataType.raw: 'ct_scans',
                         DataType.ob: 'ob',
                         DataType.dc: 'dc'}
 
+PERCENTAGE_OF_DATA_TO_LOAD = 5   # %
+
 
 class LaminographyUi:
+
+
 
     working_dir = {DataType.raw: "",
                    DataType.ob: "",
@@ -147,6 +151,24 @@ class LaminographyUi:
         self.input_files[DataType.ob] = self.retrieve_list_of_files(ob_folder)
         dc_folder = self.input_data_folders[DataType.dc]
         self.input_files[DataType.dc] = self.retrieve_list_of_files(dc_folder)
+
+    def define_parameters(self):
+        self.load()
+        self.crop()
+
+
+    def load(self):
+        o_load = Load(parent=self)
+        o_load.load_percentage_of_data(PERCENTAGE_OF_DATA_TO_LOAD)
+
+
+
+    
+
+
+
+
+
 
     def load_and_display_data(self):
         o_load = Load(parent=self)

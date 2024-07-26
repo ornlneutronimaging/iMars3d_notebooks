@@ -14,17 +14,22 @@ class Crop(Parent):
     def crop_embedded(self):
 
         list_images = self.parent.proj_raw
-        integrated_image = np.mean(list_images, axis=0)
-        height, width = np.shape(integrated_image)
+        # integrated_image = np.mean(list_images, axis=0)
+        # max_value = np.max(integrated_image)
+        # height, width = np.shape(integrated_image)
+        proj_min = self.parent.proj_min
+        height, width = np.shape(proj_min)
+        max_value = np.max(proj_min)
 
         crop_left = self.parent.crop_roi[0] if self.parent.crop_roi[0] else 0
         crop_right = self.parent.crop_roi[1] if self.parent.crop_roi[1] else width - 1
         crop_top = self.parent.crop_roi[2] if self.parent.crop_roi[2] else 0
         crop_bottom = self.parent.crop_roi[3] if self.parent.crop_roi[3] else height - 1
 
-        def plot_crop(left, right, top, bottom):
+        def plot_crop(left, right, top, bottom, vmin, vmax):
             fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(5, 5))
-            ax.imshow(integrated_image)
+            ax.imshow(proj_min, vmin=vmin, vmax=vmax)
+            ax.set_title("np.mean(proj_raw)")
 
             ax.axvline(left, color='blue', linestyle='--')
             ax.axvline(right, color='red', linestyle='--')
@@ -51,6 +56,15 @@ class Crop(Parent):
                                                                      max=height - 1,
                                                                      value=crop_bottom,
                                                                      continuous_update=False),
+                                            vmin=widgets.IntSlider(min=0,
+                                                                   max=max_value,
+                                                                   value=0,
+                                                                   continuous_update=False),
+                                            vmax=widgets.IntSlider(min=0,
+                                                                   max=max_value,
+                                                                   value=max_value,
+                                                                   continuous_update=False)
+                                                                   
                                             )
         display(self.parent.cropping)
 
