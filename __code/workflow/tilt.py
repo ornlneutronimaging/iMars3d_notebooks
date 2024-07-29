@@ -533,7 +533,7 @@ class Tilt(Parent):
         display(self.test_tilt)
 
     def display_batch_options(self):
-        tilt_options_ui = widgets.VBox([
+        self.parent.tilt_options_ui = widgets.VBox([
             widgets.Label("Tilt value (degrees)",
                           layout=widgets.Layout(width='200px'),
                           ),
@@ -541,5 +541,5 @@ class Tilt(Parent):
                                 max=90,
                                 value=0)
         ])
-        display(tilt_options_ui)
+        display(self.parent.tilt_options_ui)
         

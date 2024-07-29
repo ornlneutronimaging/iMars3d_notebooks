@@ -19,7 +19,7 @@ from __code import NCORE
 class RingRemoval(Parent):
 
     def ring_removal_options(self):
-        self.ring_removal_ui = widgets.VBox([widgets.Checkbox(value=False,
+        self.parent.ring_removal_ui = widgets.VBox([widgets.Checkbox(value=False,
                                                               description="BM3D",
                                                               disabled=True),
                                              widgets.Checkbox(value=False,
@@ -28,12 +28,12 @@ class RingRemoval(Parent):
                                                               description="Ketcham")],
                                             layout={'width': 'max-content'},
                                             )
-        display(self.ring_removal_ui)
+        display(self.parent.ring_removal_ui)
 
     def apply_ring_removal_options(self):
 
         # bm3d
-        if self.ring_removal_ui.children[0].value:
+        if self.parent.ring_removal_ui.children[0].value:
             t0 = timeit.default_timer()
             print("Running strikes removal using BM3D ...")
             import bm3d_streak_removal as bm3d
@@ -47,7 +47,7 @@ class RingRemoval(Parent):
             self.proj_ring_removal_1 = self.parent.proj_tilt_corrected
 
         # tomopy, Vo
-        if self.ring_removal_ui.children[1].value:
+        if self.parent.ring_removal_ui.children[1].value:
             t0 = timeit.default_timer()
             print("Running strikes removal using Vo ...")
             self.proj_ring_removal_2 = tomopy.remove_all_stripe(self.proj_ring_removal_1,
@@ -60,7 +60,7 @@ class RingRemoval(Parent):
             self.proj_ring_removal_2 = self.proj_ring_removal_1
 
         # ketcham
-        if self.ring_removal_ui.children[2].value:
+        if self.parent.ring_removal_ui.children[2].value:
             t0 = timeit.default_timer()
             print("Running strikes removal using Ketcham ...")
             self.proj_ring_removal_3 = remove_ring_artifact(arrays=self.proj_ring_removal_2,

@@ -45,7 +45,9 @@ from __code.workflow.ring_removal import RingRemoval
 from __code.workflow.filters import Filters
 from __code.workflow.sinogram import Sinogram
 from __code.workflow.select_z_range import SelectZRange
+
 from __code.laminography_event_handler import LaminographyEventHandler
+from __code.batch_handler import BatchHandler
 
 from __code.file_folder_browser import FileFolderBrowser
 from __code.display import Display
@@ -59,7 +61,8 @@ PERCENTAGE_OF_DATA_TO_LOAD = 0.1   # %
 
 class LaminographyUi:
 
-
+    # the widgets of the laminography settings 2 tabs
+    laminography_settings_ui = {}
 
     working_dir = {DataType.raw: "",
                    DataType.ob: "",
@@ -181,14 +184,21 @@ class LaminographyUi:
         self.display_section_title(name="Define laminography parameters")
         self.laminography_settings(batch_mode=True)
 
-    def run_reconstruction_in_batch_mode(self):
-        # create json config
+    def launch_batch_job(self):
+        o_batch = BatchHandler(parent=self)
+        o_batch.create_config_file()
+
         # launch command
         pass
 
 
 
 
+
+
+
+
+    # HELPER FOR BATCH JOBDS =============================================================================
 
     def tilt_correction_options(self):
          o_tilt = Tilt(parent=self)
@@ -201,17 +211,7 @@ class LaminographyUi:
     def display_section_title(self, name=''):
         display(HTML('<hr style=height:5px; border:none; color:#333;background-color:#333>' +
                      '<h1>' + name + '</h1>'))
-
-
-
-
-    
-
-
-
-
-
-
+ 
     def load_and_display_data(self):
         o_load = Load(parent=self)
         o_load.load_and_display_data()
