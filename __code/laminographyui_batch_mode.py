@@ -159,16 +159,36 @@ class LaminographyUi:
         self.display_section_title(name='Crop')
         self.crop_embedded(batch_mode=True)
 
-        self.display_section_title(name='Filtering')
+        self.display_section_title(name='Filtering #1')
         self.gamma_filtering_options()
 
         self.display_section_title(name='Beam fluctuation')
         o_beam = BeamFluctuationCorrection(parent=self)
         o_beam.beam_fluctuation_correction_option()
-        o_beam.apply_select_beam_fluctuation(batch_mode=True)
 
         self.display_section_title(name='Tilt calculation')
         self.tilt_correction_options()
+
+        self.display_section_title(name='Filtering #2')
+        self.filter_options()
+
+        self.display_section_title(name='Ring removal')
+        self.ring_removal_options()
+
+        self.display_section_title(name="Range of slices to reconstruct")
+        self.select_range_of_slices(batch_mode=True)
+
+        self.display_section_title(name="Define laminography parameters")
+        self.laminography_settings(batch_mode=True)
+
+    def run_reconstruction_in_batch_mode(self):
+        # create json config
+        # launch command
+        pass
+
+
+
+
 
     def tilt_correction_options(self):
          o_tilt = Tilt(parent=self)
@@ -323,9 +343,9 @@ class LaminographyUi:
                                                    description="Remove negative values")
         display(self.remove_negative_ui)
 
-    def apply_filter_options(self):
+    def apply_filter_options(self, batch_mode=False):
         # self.strikes_removal()
-        self.remove_negative_values()
+        self.remove_negative_values(batch_mode=batch_mode)
 
     def remove_negative_values(self):
         o_filter = Filters(parent=self)
@@ -394,16 +414,16 @@ class LaminographyUi:
         self.o_test_reco.retrieving_parameters()
         self.o_test_reco.running_reconstruction_test()
 
-    def select_range_of_slices(self):
+    def select_range_of_slices(self, batch_mode=False):
         o_select = SelectZRange(parent=self)
-        o_select.select_range_of_slices()
+        o_select.select_range_of_slices(batch_mode=batch_mode)
 
     def display_reconstruction_test(self):
         pass
 
     # Laminography
-    def laminography_settings(self):
-        self.o_event_laminography_settings = LaminographyEventHandler(parent=self)
+    def laminography_settings(self, batch_mode=False):
+        self.o_event_laminography_settings = LaminographyEventHandler(parent=self, batch_mode=batch_mode)
         self.o_event_laminography_settings.set_settings()
 
     def run_laminography(self):

@@ -42,11 +42,16 @@ class LaminographyEventHandler:
 
     _proj_mlog = None
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, batch_mode=False):
         self.parent = parent
 
         self.z_top, self.z_bottom = list(self.parent.z_range_selection.result)
-        self._proj_mlog = self.parent.proj_mlog[self.z_top: self.z_bottom, :, :]
+        if batch_mode:
+            proj_mlog = self.parent.proj_raw
+        else:
+            proj_mlog = self.parent.proj_mlog
+        self._proj_mlog = proj_mlog[self.z_top: self.z_bottom, :, :]
+
         [self.nbr_angles, self.nbr_row, self.nbr_col] = np.shape(self._proj_mlog)
 
     def set_settings(self):

@@ -12,9 +12,14 @@ from __code import NCORE
 
 class Filters(Parent):
 
-    def remove_negative_values(self):
+    def remove_negative_values(self, batch_mode=False):
         """remove all the intensity that are below 0"""
-        if self.parent.remove_negative_ui.value:
+        if batch_mode:
+            flag = True
+        else:
+            flag = self.parent.remove_negative_ui.value
+
+        if flag:
             self.parent.proj_mlog[self.parent.proj_mlog < 0] = 0
             print(" Removed negative values!")
         else:
