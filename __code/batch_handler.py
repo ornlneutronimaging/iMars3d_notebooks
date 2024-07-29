@@ -1,5 +1,6 @@
 from __code.parent import Parent
 from __code import DataType
+from __code.laminography_event_handler import LaminographyEventHandler
 
 
 class BatchHandler(Parent):
@@ -37,5 +38,14 @@ class BatchHandler(Parent):
         # range of slices to reconstruct
         top_slice, bottom_slice = list(self.parent.z_range_selection.result)
 
-        
+        # laminography parameters
+        laminography_dict = self.parent.laminography_settings_ui
+        angle = laminography_dict['angle'].value
+        list_gpu_index = LaminographyEventHandler(laminography_dict['list_gpus'])
+        num_iter = laminography_dict['num_iterations'].value
+        mrf_p = laminography_dict['mrf_p'].value
+        mrf_sigma = laminography_dict['mrf_sigma'].value
+        stop_threhsold = laminography_dict['stop_threshold'].value
+        verbose = laminography_dict['verbose'].value
 
+        json_file_name =  pass

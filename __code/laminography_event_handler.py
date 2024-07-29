@@ -87,8 +87,17 @@ class LaminographyEventHandler:
         tab.titles = ["Laminography angle", "Advanced settings"]
         display(tab)
 
-    def get_gpu_index(self):
-        children_gpus_ui = self.children_gpus[1:]
+        # saving widgets for batch mode
+        self.parent.laminography_settings_ui = {'angle': self.laminography_angle_ui,
+                                                'list_gpus': self.children_gpus,
+                                                'num_iterations': self.num_iter_ui,
+                                                'mrf_p': self.mrf_p_ui,
+                                                'mrf_sigma': self.mrf_sigma_ui,
+                                                'stop_threshold': self.stop_threshold_ui,
+                                                'verbose': self.verbose_ui}
+
+    @staticmethod
+    def get_gpu_index(children_gpus_ui):
         gpu_index = []
         for _index, _child in enumerate(children_gpus_ui):
             if _child.value:
@@ -98,7 +107,7 @@ class LaminographyEventHandler:
     def get_rec_params(self):
         rec_params = {}
         rec_params['num_iter'] = self.num_iter_ui.value
-        rec_params['gpu_index'] = self.get_gpu_index()
+        rec_params['gpu_index'] = LaminographyEventHandler.get_gpu_index(self.children_gpus[1:])
         rec_params['MRF_P'] = self.mrf_p_ui.value
         rec_params['MRF_SIGMA'] = self.mrf_sigma_ui.value
         # rec_params['huber_T'] = self.huber_t
