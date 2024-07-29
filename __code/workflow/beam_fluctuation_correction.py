@@ -17,21 +17,35 @@ class BeamFluctuationCorrection(Parent):
                                                            description="Beam fluctuation correction")
         display(self.parent.beam_fluctuation_ui)
 
-    def apply_select_beam_fluctuation(self):
+    def apply_select_beam_fluctuation(self, batch_mode=False):
 
-        if self.parent.beam_fluctuation_ui.value:
-            integrated_image = np.mean(self.parent.proj_norm, axis=0)
+        if batch_mode:
+            display_mode = True
+        else:
+            display_mode = self.parent.beam_fluctuation_ui.value
+
+        if display_mode:
+
+            if batch_mode:
+                integrated_image = self.parent.integrated_proj_min
+                
+            else:
+                proj_norm = self.parent.proj_norm
+                integrated_image = np.mean(proj_norm, axis=0)
+    
             height, width = np.shape(integrated_image)
 
             left = self.parent.background_roi[0] if self.parent.background_roi[0] else 0
             right = self.parent.background_roi[1] if self.parent.background_roi[1] else width - 1
             top = self.parent.background_roi[2] if self.parent.background_roi[2] else 0
             bottom = self.parent.background_roi[3] if self.parent.background_roi[3] else height - 1
+            vmin = np.nanmin(integrated_image)
+            vmax = np.nanmax(integrated_image)
 
-            def plot_crop(left, right, top, bottom):
+            def plot_crop(left, right, top, bottom, vmin, vmax):
 
                 fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(5, 5))
-                ax.imshow(integrated_image)
+                ax.imshow(integrated_image, vmin=vmin, vmax=vmax)
 
                 ax.axvline(left, color='blue', linestyle='--')
                 ax.axvline(right, color='red', linestyle='--')
@@ -58,7 +72,15 @@ class BeamFluctuationCorrection(Parent):
                                                                              max=height - 1,
                                                                              value=bottom,
                                                                              continuous_update=False),
-                                                    )
+                                                    vmin=widgets.IntSlider(min=0,
+                                                                           max=vmax,
+                                                                           value=0,
+                                                                           continuous_update=False),
+                                                    vmax=widgets.IntSlider(min=0,
+                                                                           max=vmax,
+                                                                           value=vmax,
+                                                                           continuous_update=False),
+                                                                    )
             display(self.parent.beam_fluctuation_roi)
 
         else:

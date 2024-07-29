@@ -6,6 +6,7 @@ import timeit
 import time
 from ipywidgets import interactive
 import ipywidgets as widgets
+from IPython.core.display import HTML
 from IPython.display import display
 import multiprocessing as mp
 
@@ -53,7 +54,7 @@ default_input_folder = {DataType.raw: 'ct_scans',
                         DataType.ob: 'ob',
                         DataType.dc: 'dc'}
 
-PERCENTAGE_OF_DATA_TO_LOAD = 5   # %
+PERCENTAGE_OF_DATA_TO_LOAD = 0.1   # %
 
 
 class LaminographyUi:
@@ -154,12 +155,33 @@ class LaminographyUi:
 
     def define_parameters(self):
         self.load()
-        self.crop()
 
+        self.display_section_title(name='Crop')
+        self.crop_embedded(batch_mode=True)
+
+        self.display_section_title(name='Filtering')
+        self.gamma_filtering_options()
+
+        self.display_section_title(name='Beam fluctuation')
+        o_beam = BeamFluctuationCorrection(parent=self)
+        o_beam.beam_fluctuation_correction_option()
+        o_beam.apply_select_beam_fluctuation(batch_mode=True)
+
+        self.display_section_title(name='Tilt calculation')
+        self.tilt_correction_options()
+
+    def tilt_correction_options(self):
+         o_tilt = Tilt(parent=self)
+         o_tilt.display_batch_options()
 
     def load(self):
         o_load = Load(parent=self)
         o_load.load_percentage_of_data(PERCENTAGE_OF_DATA_TO_LOAD)
+    
+    def display_section_title(self, name=''):
+        display(HTML('<hr style=height:5px; border:none; color:#333;background-color:#333>' +
+                     '<h1>' + name + '</h1>'))
+
 
 
 
@@ -186,9 +208,9 @@ class LaminographyUi:
 
     # CROP ===============================================================================================
 
-    def crop_embedded(self):
+    def crop_embedded(self, batch_mode=False):
         o_crop = Crop(parent=self)
-        o_crop.crop_embedded()
+        o_crop.crop_embedded(batch_mode=batch_mode)
 
     def saving_crop_region(self, crop_region):
         self.crop_region = crop_region
@@ -231,7 +253,7 @@ class LaminographyUi:
 
     def define_beam_fluctuation_settings(self):
         o_beam = BeamFluctuationCorrection(parent=self)
-        o_beam.apply_select_beam_fluctuation()
+        o_beam.apply_select_beam_fluctuation(batch_mode=True)
 
     def beam_fluctuation_correction_embedded(self):
         o_beam = BeamFluctuationCorrection(parent=self)

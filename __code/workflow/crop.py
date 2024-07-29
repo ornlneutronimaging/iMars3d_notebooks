@@ -11,13 +11,15 @@ from __code.parent import Parent
 
 class Crop(Parent):
 
-    def crop_embedded(self):
+    def crop_embedded(self, batch_mode=False):
 
         list_images = self.parent.proj_raw
-        # integrated_image = np.mean(list_images, axis=0)
-        # max_value = np.max(integrated_image)
-        # height, width = np.shape(integrated_image)
-        proj_min = self.parent.proj_min
+        if batch_mode:
+            proj_min = np.mean(list_images, axis=0)
+        else:
+            proj_min = self.parent.proj_min
+    
+        self.parent.integrated_proj_min = proj_min
         height, width = np.shape(proj_min)
         max_value = np.max(proj_min)
 

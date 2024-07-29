@@ -45,8 +45,6 @@ class Load(Parent):
         else:
             list_folders = [os.path.abspath(_folder) for _folder in list_folders]
 
-        print(f"{list_folders =}")
-
         list_files = retrieve_list_of_files(list_folders)
         self.parent.input_files[self.parent.current_data_type] = list_files
 
@@ -60,12 +58,16 @@ class Load(Parent):
         self.display_data()
 
     def load_percentage_of_data(self, percentage_to_load=5):
-        nbr_sample_file = len(self.parent.input_files[self.parent.current_data_type])
-        nbr_file_to_load = int(percentage_to_load * nbr_sample_file / 100)
-        list_file_index_to_use = random.sample(range(1, nbr_sample_file), nbr_file_to_load)
-        list_raw_file = []
-        for _index in list_file_index_to_use:
-            list_raw_file.append(self.parent.input_files[DataType.raw][_index])
+        nbr_sample_file = len(self.parent.input_files[DataType.raw])
+        if nbr_sample_file > 10:
+            nbr_file_to_load = int(percentage_to_load * nbr_sample_file / 100)
+            list_file_index_to_use = random.sample(range(1, nbr_sample_file), nbr_file_to_load)
+
+            list_raw_file = []
+            for _index in list_file_index_to_use:
+                list_raw_file.append(self.parent.input_files[DataType.raw][_index])
+        else:
+            list_raw_file = self.parent.input_files[DataType.raw]
 
         self.parent.proj_raw, self.parent.ob_raw, self.parent.dc_raw, self.parent.rot_angles = (
             load_data(ct_files=list_raw_file,
