@@ -109,6 +109,10 @@ class Imars3dui:
         o_load.select_folder(data_type=DataType.ob,
                              multiple_flag=True)
 
+    def select_dc_options(self):
+        o_load = Load(parent=self)
+        o_load.select_dc_options()
+
     def select_dc(self):
         o_load = Load(parent=self)
         o_load.select_folder(data_type=DataType.dc,
