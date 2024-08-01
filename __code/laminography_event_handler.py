@@ -12,6 +12,7 @@ from imars3d.backend.dataio.data import save_data
 from __code.system import System
 from __code.utilities.files import save_json
 from __code.utilities.time import convert_time_s_in_time_hr_mn_s
+from __code import BatchJsonKeys
 
 
 class LaminographyEventHandler:
@@ -88,13 +89,13 @@ class LaminographyEventHandler:
         display(tab)
 
         # saving widgets for batch mode
-        self.parent.laminography_settings_ui = {'angle': self.laminography_angle_ui,
-                                                'list_gpus': self.children_gpus,
-                                                'num_iterations': self.num_iter_ui,
-                                                'mrf_p': self.mrf_p_ui,
-                                                'mrf_sigma': self.mrf_sigma_ui,
-                                                'stop_threshold': self.stop_threshold_ui,
-                                                'verbose': self.verbose_ui}
+        self.parent.laminography_settings_ui = {BatchJsonKeys.angle: self.laminography_angle_ui,
+                                                BatchJsonKeys.list_gpus: self.children_gpus,
+                                                BatchJsonKeys.num_iterations: self.num_iter_ui,
+                                                BatchJsonKeys.mrf_p: self.mrf_p_ui,
+                                                BatchJsonKeys.mrf_sigma: self.mrf_sigma_ui,
+                                                BatchJsonKeys.stop_threshold: self.stop_threshold_ui,
+                                                BatchJsonKeys.verbose: self.verbose_ui}
 
     @staticmethod
     def get_gpu_index(children_gpus_ui):
@@ -106,19 +107,19 @@ class LaminographyEventHandler:
 
     def get_rec_params(self):
         rec_params = {}
-        rec_params['num_iter'] = self.num_iter_ui.value
-        rec_params['gpu_index'] = LaminographyEventHandler.get_gpu_index(self.children_gpus[1:])
-        rec_params['MRF_P'] = self.mrf_p_ui.value
-        rec_params['MRF_SIGMA'] = self.mrf_sigma_ui.value
+        rec_params[BatchJsonKeys.num_iterations] = self.num_iter_ui.value
+        rec_params[BatchJsonKeys.list_gpus] = LaminographyEventHandler.get_gpu_index(self.children_gpus[1:])
+        rec_params[BatchJsonKeys.mrf_p] = self.mrf_p_ui.value
+        rec_params[BatchJsonKeys.mrf_sigma] = self.mrf_sigma_ui.value
         # rec_params['huber_T'] = self.huber_t
         # rec_params['huber_delta'] = self.huber_delta
         # rec_params['sigma'] = self.sigma
         # rec_params['reject_frac'] = self.reject_frac
-        rec_params['verbose'] = self.verbose_ui.value
-        rec_params['debug'] = self.debug
-        rec_params['stop_thresh'] = self.stop_threshold_ui.value
-        rec_params['filt_cutoff'] = 0.5
-        rec_params['filt_type'] = 'Ram-Lak'
+        rec_params[BatchJsonKeys.verbose] = self.verbose_ui.value
+        rec_params[BatchJsonKeys.debug] = self.debug
+        rec_params[BatchJsonKeys.stop_threshold] = self.stop_threshold_ui.value
+        rec_params[BatchJsonKeys.filt_cutoff] = 0.5
+        rec_params[BatchJsonKeys.filt_type] = 'Ram-Lak'
 
         return rec_params
 

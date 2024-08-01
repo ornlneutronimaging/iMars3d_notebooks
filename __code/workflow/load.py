@@ -76,13 +76,6 @@ class Load(Parent):
                       max_workers=20)  # use 20 workers
         )
 
-
-
-
-
-
-
-
     def load_data(self):
 
         self.parent.proj_raw, self.parent.ob_raw, self.parent.dc_raw, self.parent.rot_angles = (
@@ -100,6 +93,12 @@ class Load(Parent):
 
             self.parent.dc_raw = np.array([np.zeros_like(self.parent.proj_raw[0])])
 
+        # debugging - use np.float16 instead of default np.float64
+        print(f"Before conversion: {self.parent.proj_raw.dtype= }")
+        # self.parent.proj_raw = self.parent.proj_raw.astype(np.float16)
+        # self.parent.ob_raw = self.parent.ob_raw.astype(np.float16)
+        # self.parent.dc_raw = self.parent.dc_raw.astype(np.float16)
+        # print(f"After conversion: {self.parent.proj_raw.dtype= }")
         self.parent.untouched_sample_data = copy.deepcopy(self.parent.proj_raw)
 
     def select_dc_options(self):

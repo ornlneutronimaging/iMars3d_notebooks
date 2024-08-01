@@ -97,6 +97,9 @@ class LaminographyUi:
     ob_raw = None
     dc_raw = None
 
+    # name of the raw folder
+    raw_folder_name = None
+
     investigate_data_flag = False
 
     o_tilt = None
@@ -116,6 +119,7 @@ class LaminographyUi:
         self.working_dir[DataType.raw] = os.path.join(init_path_to_raw, default_input_folder[DataType.raw])
         self.working_dir[DataType.ob] = os.path.join(init_path_to_raw, default_input_folder[DataType.ob])
         self.working_dir[DataType.dc] = os.path.join(init_path_to_raw, default_input_folder[DataType.dc])
+        print("version 07-30-2024")
 
     # SELECT INPUT DATA ===============================================================================================
     def select_raw(self):

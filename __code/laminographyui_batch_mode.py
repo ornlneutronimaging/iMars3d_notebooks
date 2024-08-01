@@ -105,6 +105,9 @@ class LaminographyUi:
     ob_raw = None
     dc_raw = None
 
+    # name of the raw folder
+    raw_folder_name = None
+
     investigate_data_flag = False
 
     o_tilt = None
@@ -168,6 +171,7 @@ class LaminographyUi:
         self.display_section_title(name='Beam fluctuation')
         o_beam = BeamFluctuationCorrection(parent=self)
         o_beam.beam_fluctuation_correction_option()
+        o_beam.apply_select_beam_fluctuation(batch_mode=True)
 
         self.display_section_title(name='Tilt calculation')
         self.tilt_correction_options()

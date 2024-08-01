@@ -89,3 +89,35 @@ class SvmbirParameters(RecParameters):
     weight_type = 'weight type'
     verbose = 'verbose'
     temp_disk = 'temp disk'
+
+
+class BatchJsonKeys:
+
+    list_raw_files = 'list_raw_files'
+    list_ob_files = 'list_ob_files'
+    list_dc_files = 'list_dc_files'
+    crop_region = 'crop_region'
+    gamma_filtering_flag = 'gamma_filtering_flag'
+    beam_fluctuation_flag = 'beam_fluctuation_flag'
+    beam_fluctuation_region = 'beam_fluctuation_region'
+    tilt_value = 'tilt_value'
+    remove_negative_values_flag = 'remove_negative_values_flag'
+    bm3d_flag = 'bm3d_flag'
+    tomopy_v0_flag = 'tomopy_v0_flag'
+    ketcham_flag = 'ketcham_flag'
+    range_slices_to_reconstruct = 'range_slices_to_reconstruct'
+    laminography_dict = 'laminography_dict'
+
+    angle = 'angle'
+    list_gpus = 'list_gpus'
+    num_iterations = 'num_iterations'
+    mrf_p = 'mrf_p'
+    mrf_sigma = 'mrf_sigma'
+    stop_threshold = 'stop_threshold'
+    verbose = 'verbose'
+    debug = 'debug'
+    log_file_name = 'log_file_name'
+
+    filt_cutoff = 'filt_cutoff'
+    filt_type = 'filt_type'
+    
