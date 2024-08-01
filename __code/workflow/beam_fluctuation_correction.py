@@ -93,29 +93,46 @@ class BeamFluctuationCorrection(Parent):
 
     def _beam_fluctuation(self, background_region=None):
 
-        # [top, left, bottom, right]
-        roi = [background_region[2], background_region[0],
-               background_region[3], background_region[1]]
+        # build roi
+        if background_region is None:
+            print("No background region selected, skip roi beam fluctuation correction")
+            return
 
+        roi = [
+            background_region[2],  # top
+            background_region[0],  # left
+            background_region[3],  # bottom
+            background_region[1],  # right
+        ]
+
+        # cache the before image for display later
+        proj_before = np.array(self.parent.proj_norm[0])
+
+        # apply beam fluctuation correction
         self.parent.proj_norm_beam_fluctuation = normalize_roi(
                     ct=self.parent.proj_norm,
                     roi=roi,
-                    max_workers=NCORE)
+                    max_workers=NCORE,
+        )
 
-        fig, (ax0, ax1) = plt.subplots(nrows=2,
-                                       ncols=1,
-                                       num="Beam fluctuation",
-                                       figsize=(5, 10))
+        # cleanup
+        print("Deleting proj_norm and releasing memory ...")
+        self.parent.proj_norm = None
+        import gc
+        gc.collect()
+
+        _, (ax0, ax1) = plt.subplots(
+            nrows=2,
+            ncols=1,
+            num="Beam fluctuation",
+            figsize=(5, 10),
+        )
         # before beam fluctuation
-        # proj_norm_min = np.min(proj_norm, axis=0)
-        # fig0 = ax0.imshow(proj_norm_min)
-        fig0 = ax0.imshow(self.parent.proj_norm[0])
+        fig0 = ax0.imshow(proj_before)
         ax0.set_title("before")
         plt.colorbar(fig0, ax=ax0)
 
         # after beam fluctuation
-        # proj_norm_beam_fluctuation_min = np.min(proj_norm_beam_fluctuation, axis=0)
-        # fig1 = ax1.imshow(proj_norm_beam_fluctuation_min)
         fig1 = ax1.imshow(self.parent.proj_norm_beam_fluctuation[0])
         ax1.set_title("after")
         plt.colorbar(fig1, ax=ax1)
