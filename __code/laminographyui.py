@@ -403,7 +403,7 @@ class LaminographyUi:
 
         o_file_browser = FileFolderBrowser(working_dir=working_dir,
                                            next_function=self.export_data)
-        _ = o_file_browser.select_output_folder(instruction="Select output folder")
+        list_folder_selected = o_file_browser.select_output_folder(instruction="Select output folder")
 
     def export_data(self, folder):
         print(f"New folder will be created in {folder} and called {self.input_folder_base_name}_YYYYMMDDHHMM")
