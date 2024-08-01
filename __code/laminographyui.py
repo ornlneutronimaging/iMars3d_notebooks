@@ -1,13 +1,9 @@
 import os
-import glob
-import matplotlib.pyplot as plt
+import psutil
 import numpy as np
-import timeit
 import time
-from ipywidgets import interactive
 import ipywidgets as widgets
 from IPython.display import display
-import multiprocessing as mp
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -415,3 +411,33 @@ class LaminographyUi:
                   outputbase=folder,
                   name=self.input_folder_base_name)
         print(f"Done!")
+
+    def get_memory_usage(self):
+        """
+        Calculate the total memory usage of the current process and its children.
+
+        Returns
+        -------
+        float
+            Total memory usage in MB.
+        """
+        process = psutil.Process(os.getpid())
+        mem_info = process.memory_info()
+        mem_usage_mb = mem_info.rss / (1024 ** 2)  # Convert bytes to MB
+
+        # Include memory usage of child processes
+        for child in process.children(recursive=True):
+            try:
+                mem_info = child.memory_info()
+                mem_usage_mb += mem_info.rss / (1024 ** 2)
+            except psutil.NoSuchProcess:
+                continue
+
+        return mem_usage_mb
+
+    def print_memory_usage(self):
+        """
+        Print the total memory usage.
+        """
+        mem_usage = self.get_memory_usage()
+        print(f"Total memory usage: {mem_usage:.2f} MB")
