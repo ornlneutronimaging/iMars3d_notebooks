@@ -2,12 +2,14 @@ import matplotlib.pyplot as plt
 import timeit
 import numpy as np
 import os
+from tqdm.auto import tqdm
 
 from imars3d.backend.preparation.normalization import normalization
 from imars3d.backend.dataio.data import save_data
 
 from __code.parent import Parent
 from __code.file_folder_browser import FileFolderBrowser
+from __code import NCORE
 
 
 class Normalization(Parent):
@@ -15,17 +17,35 @@ class Normalization(Parent):
     def normalization_and_display(self):
         print(f"Running normalization ...")
         t0 = timeit.default_timer()
-        self.parent.proj_norm = normalization(arrays=self.parent.proj_gamma,
-                                              flats=self.parent.ob_crop,
-                                              darks=self.parent.dc_crop)
-        del self.parent.proj_gamma
+        # note: we need to use in place operation to reduce memory usage
+        # step 0: cast to float32 so that we can use proj_gamma as output container
+        self.parent.proj_gamma = self.parent.proj_gamma.astype(np.float32)
+        # step 1: process NCORE * 5 frames at a time
+        num_proj = self.parent.proj_gamma.shape[0]
+        step_size = NCORE * 5
+        for i in tqdm(range(0, num_proj, step_size)):
+            end_idx = min(i + step_size, num_proj)
+            self.parent.proj_gamma[i:end_idx] = normalization(
+                arrays=self.parent.proj_gamma[i:end_idx],
+                flats=self.parent.ob_crop,
+                darks=self.parent.dc_crop,
+            )
+        # step 2: rename the array
+        self.parent.proj_norm = self.parent.proj_gamma
         t1 = timeit.default_timer()
         print(f"normalization done in {t1 - t0:.2f}s")
 
+        # visualization
         plt.figure()
         self.parent.proj_norm_min = np.min(self.parent.proj_norm, axis=0)
         plt.imshow(self.parent.proj_norm_min)
         plt.colorbar()
+
+        # cleanup (just reduce counter here)
+        print("Deleting proj_gamma and releasing memory ...")
+        self.parent.proj_gamma = None
+        import gc
+        gc.collect()
 
     def export_normalization(self):
         working_dir = os.path.join(self.parent.working_dir, "shared", "processed_data")

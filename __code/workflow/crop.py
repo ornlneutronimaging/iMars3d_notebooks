@@ -82,3 +82,11 @@ class Crop(Parent):
         self.parent.proj_crop_min = crop(arrays=self.parent.proj_min,
                                          crop_limit=crop_region)
         print(f"cropping done!")
+        # release memory used by raw as they are not needed anymore
+        print("Deleting *_raw and releasing memory ...")
+        self.parent.proj_raw = None
+        self.parent.ob_raw = None
+        self.parent.dc_raw = None
+        self.parent.proj_min = None
+        import gc
+        gc.collect()
