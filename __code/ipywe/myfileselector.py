@@ -392,9 +392,23 @@ def del_ftime(file_label):
 
 class FileSelection(object):
 
-    def __init__(self, working_dir='./', filter=''):
+    next = None
+
+    def __init__(self,
+                 working_dir='./',
+                 filter='',
+                 default_filter=None,
+                 next=None,
+                 instructions=None,
+                 multiple=True):
         self.working_dir = working_dir
+        self.instuctions = instructions
         self.filter = filter
+        self.default_filter = default_filter
+        self.next = next
+        self.multiple = multiple
+
+        self.progress_bar_output = ipyw.Output()  # reserve space for progress bar
 
     def select_file_help(self, value):
         import webbrowser
@@ -403,28 +417,63 @@ class FileSelection(object):
     def load_files(self, files):
         o_norm = Normalization()
         files.sort()
-        o_norm.load(file=files, notebook=True)
+        with self.progress_bar_output:
+            self.progress_bar_output.clear_output()
+            o_norm.load(file=files, notebook=False)
+        self.progress_bar_output.clear_output()
         self.data_dict = o_norm.data
 
-    def select_data(self):
+    def load_files_without_checking_shape(self, files):
+        o_norm = Normalization()
+        files.sort()
+        with self.progress_bar_output:
+            self.progress_bar_output.clear_output()
+            o_norm.load(file=files, notebook=True, check_shape=False)
+        self.data_dict = o_norm.data
+
+    def select_data(self, check_shape=True):
         help_ui = widgets.Button(description="HELP",
                                  button_style='info')
         help_ui.on_click(self.select_file_help)
-        display(help_ui)
+        status_bar = ipyw.VBox([help_ui, self.progress_bar_output])
+        display(status_bar)
 
-        if self.filter:
-            self.files_ui = fileselector.FileSelectorPanel(instruction='Select Images ...',
-                                                           start_dir=self.working_dir,
-                                                           next=self.load_files,
-                                                           filters=self.filter,
-                                                           multiple=True)
+        instructions = self.instuctions if self.instuctions else "Select Images ..."
+
+        if check_shape:
+
+            next = self.next if self.next else self.load_files
+            if self.filter:
+                self.files_ui = fileselector.FileSelectorPanel(instruction=instructions,
+                                                               start_dir=self.working_dir,
+                                                               next=next,
+                                                               filters=self.filter,
+                                                               default_filter=self.default_filter,
+                                                               multiple=self.multiple)
+            else:
+                 self.files_ui = fileselector.FileSelectorPanel(instruction=instructions,
+                                                                start_dir=self.working_dir,
+                                                                next=next,
+                                                                multiple=self.multiple)
+
         else:
-             self.files_ui = fileselector.FileSelectorPanel(instruction='Select Images ...',
-                                                                 start_dir=self.working_dir,
-                                                                 next=self.load_files,
-                                                                 multiple=True)
+
+            next = self.next if self.next else self.load_files_without_checking_shape
+            if self.filter:
+                self.files_ui = fileselector.FileSelectorPanel(instruction=instructions,
+                                                               start_dir=self.working_dir,
+                                                               next=next,
+                                                               filters=self.filter,
+                                                               default_filter=self.default_filter,
+                                                               multiple=self.multiple)
+            else:
+                self.files_ui = fileselector.FileSelectorPanel(instruction=instructions,
+                                                               start_dir=self.working_dir,
+                                                               next=next,
+                                                               multiple=self.multiple)
 
         self.files_ui.show()
+
 
 class FileSelectorPanelWithJumpFolders:
 
@@ -448,6 +497,9 @@ class FileSelectorPanelWithJumpFolders:
 
         def display_file_selector_from_shared(ev):
             start_dir = os.path.join(ipts_folder, 'shared')
+            if not os.path.exists(start_dir):
+                start_dir = os.path.expanduser("~")
+
             self.output_folder_ui.remove()
             self.display_file_selector(instruction=instruction,
                                        start_dir=start_dir,
@@ -462,6 +514,8 @@ class FileSelectorPanelWithJumpFolders:
 
         def display_file_selector_from_home(ev):
             start_dir = os.path.expanduser("~")
+
+            
             self.output_folder_ui.remove()
             self.display_file_selector(instruction=instruction,
                                        start_dir=start_dir,
@@ -547,4 +601,3 @@ class FileSelectorPanelWithJumpFolders:
                                                                      stay_alive=stay_alive)
 
         self.output_folder_ui.show()
-

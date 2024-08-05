@@ -50,6 +50,7 @@ from __code.laminography_event_handler import LaminographyEventHandler
 from __code.batch_handler import BatchHandler
 
 from __code.file_folder_browser import FileFolderBrowser
+from __code.ipywe import myfileselector
 from __code.display import Display
 
 default_input_folder = {DataType.raw: 'ct_scans',
@@ -171,7 +172,7 @@ class LaminographyUi:
         self.display_section_title(name='Beam fluctuation')
         o_beam = BeamFluctuationCorrection(parent=self)
         o_beam.beam_fluctuation_correction_option()
-        o_beam.apply_select_beam_fluctuation(batch_mode=True)
+        o_beam.select_beam_fluctuation_region(batch_mode=True)
 
         self.display_section_title(name='Tilt calculation')
         self.tilt_correction_options()
@@ -187,6 +188,13 @@ class LaminographyUi:
 
         self.display_section_title(name="Define laminography parameters")
         self.laminography_settings(batch_mode=True)
+
+        self.display_section_title(name="Output folder")
+        self.select_export_folder()
+
+
+
+
 
     def launch_batch_job(self):
         o_batch = BatchHandler(parent=self)
@@ -468,18 +476,29 @@ class LaminographyUi:
     #                                                                  value=0))
     #     display(plot_reconstruction_ui)
 
-    def export(self):
+    def select_export_folder(self):
         working_dir = os.path.join(self.working_dir[DataType.ipts], "shared", "processed_data")
         if not os.path.exists(working_dir):
             working_dir = self.working_dir
 
-        o_file_browser = FileFolderBrowser(working_dir=working_dir,
-                                           next_function=self.export_data)
-        list_folder_selected = o_file_browser.select_output_folder(instruction="Select output folder")
+        # o_file_browser = FileFolderBrowser(working_dir=working_dir,
+        #                                    next_function=self.export_data)
+        # list_folder_selected = o_file_browser.select_output_folder(instruction="Select output folder")
 
-    def export_data(self, folder):
-        print(f"New folder will be created in {folder} and called {self.input_folder_base_name}_YYYYMMDDHHMM")
-        save_data(data=np.asarray(self.recon_mbir),
-                  outputbase=folder,
-                  name=self.input_folder_base_name)
-        print(f"Done!")
+        self.o_file_browser = myfileselector.FileSelectorPanelWithJumpFolders(ipts_folder=self.ipts_folder,
+                                                                              show_jump_to_home=True,
+                                                                              show_jump_to_share=True,
+                                                                              newdir_toolbar_button=True,
+                                                                              start_dir=working_dir,
+                                                                              next=self.display_output_folder,
+                                                                              type='directory')
+
+    def display_output_folder(self, output_folder):
+        print(f"Output folder: {output_folder}")
+
+    # def export_data(self, folder):
+    #     print(f"New folder will be created in {folder} and called {self.input_folder_base_name}_YYYYMMDDHHMM")
+    #     save_data(data=np.asarray(self.recon_mbir),
+    #               outputbase=folder,
+    #               name=self.input_folder_base_name)
+    #     print(f"Done!")

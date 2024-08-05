@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 
 from imars3d.backend.morph.crop import crop
 
+from __code.utilities.system import delete_array, print_memory_usage
 from __code.parent import Parent
 
 
@@ -29,7 +30,7 @@ class Crop(Parent):
         crop_bottom = self.parent.crop_roi[3] if self.parent.crop_roi[3] else height - 1
 
         def plot_crop(left, right, top, bottom, vmin, vmax):
-            fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(5, 5))
+            _, ax = plt.subplots(nrows=1, ncols=1, figsize=(5, 5))
             ax.imshow(proj_min, vmin=vmin, vmax=vmax)
             ax.set_title("np.mean(proj_raw)")
 
@@ -71,6 +72,7 @@ class Crop(Parent):
         display(self.parent.cropping)
 
     def crop_region(self, crop_region):
+        print_memory_usage(message='Before')
         print(f"Running crop ...")
         self.parent.proj_crop = crop(arrays=self.parent.proj_raw,
                                      crop_limit=crop_region)
@@ -81,12 +83,12 @@ class Crop(Parent):
 
         self.parent.proj_crop_min = crop(arrays=self.parent.proj_min,
                                          crop_limit=crop_region)
+
         print(f"cropping done!")
-        # release memory used by raw as they are not needed anymore
-        print("Deleting *_raw and releasing memory ...")
-        self.parent.proj_raw = None
-        self.parent.ob_raw = None
-        self.parent.dc_raw = None
-        self.parent.proj_min = None
-        import gc
-        gc.collect()
+
+        delete_array(self.parent.proj_raw)
+        delete_array(self.parent.ob_raw)
+        delete_array(self.parent.dc_raw)
+        delete_array(self.parent.proj_min)
+
+        print_memory_usage(message='After')

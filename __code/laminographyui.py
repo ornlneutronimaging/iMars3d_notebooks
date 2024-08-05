@@ -28,6 +28,7 @@ from imars3d.backend.corrections.intensity_fluctuation_correction import normali
 
 from __code import DataType, TiltAlgorithms, TiltTestKeys, config
 
+from __code.utilities.system import print_memory_usage, delete_array
 from __code.workflow.load import Load
 from __code.workflow.crop import Crop
 from __code.workflow.gamma_filtering import GammaFiltering
@@ -115,7 +116,7 @@ class LaminographyUi:
         self.working_dir[DataType.raw] = os.path.join(init_path_to_raw, default_input_folder[DataType.raw])
         self.working_dir[DataType.ob] = os.path.join(init_path_to_raw, default_input_folder[DataType.ob])
         self.working_dir[DataType.dc] = os.path.join(init_path_to_raw, default_input_folder[DataType.dc])
-        print("version 07-30-2024")
+        print("version 08-01-2024")
 
     # SELECT INPUT DATA ===============================================================================================
     def select_raw(self):
@@ -203,28 +204,32 @@ class LaminographyUi:
         o_beam = BeamFluctuationCorrection(parent=self)
         o_beam.beam_fluctuation_correction_option()
 
-    def apply_select_beam_fluctuation(self):
-        o_beam = BeamFluctuationCorrection(parent=self)
-        o_beam.apply_select_beam_fluctuation()
-
     def define_beam_fluctuation_settings(self):
         o_beam = BeamFluctuationCorrection(parent=self)
-        o_beam.apply_select_beam_fluctuation()
-
-    def beam_fluctuation_correction_embedded(self):
-        o_beam = BeamFluctuationCorrection(parent=self)
-        o_beam.beam_fluctuation_correction_embedded()
+        o_beam.select_beam_fluctuation_region()
 
     def run_beam_fluctuation_correction(self):
         o_beam = BeamFluctuationCorrection(parent=self)
         o_beam.beam_fluctuation_correction_embedded()
 
-    def saving_beam_fluctuation_correction(self, background_region):
-        self.background_region = background_region
+    # def apply_select_beam_fluctuation(self):
+    #     o_beam = BeamFluctuationCorrection(parent=self)
+    #     o_beam.apply_select_beam_fluctuation()
 
-    def beam_fluctuation_correction(self):
-        background_region = self.background_region
-        self._beam_fluctuation(background_region=background_region)
+    # def beam_fluctuation_correction_embedded(self):
+    #     o_beam = BeamFluctuationCorrection(parent=self)
+    #     o_beam.beam_fluctuation_correction_embedded()
+
+    # def run_beam_fluctuation_correction(self):
+    #     o_beam = BeamFluctuationCorrection(parent=self)
+    #     o_beam.beam_fluctuation_correction_embedded()
+
+    # def saving_beam_fluctuation_correction(self, background_region):
+    #     self.background_region = background_region
+
+    # def beam_fluctuation_correction(self):
+    #     background_region = self.background_region
+    #     self._beam_fluctuation(background_region=background_region)
 
     # TRANSMISSION TO ATTENUATION ===========================================================================
 
@@ -265,39 +270,26 @@ class LaminographyUi:
     # FILTERING ==========================================================================================
 
     def filter_options(self):
-        # self.strikes_removal_option()
-        self.remove_negative_values_option()
-
-    def strikes_removal_option(self):
-        self.strikes_removal_ui = widgets.Checkbox(value=False,
-                                                   disabled=not enable_remove_ring_artifact,
-                                                   description="Strikes removal")
-        display(self.strikes_removal_ui)
-
-    def remove_negative_values_option(self):
-        self.remove_negative_ui = widgets.Checkbox(value=False,
-                                                   description="Remove negative values")
-        display(self.remove_negative_ui)
+        o_filter = Filters(parent=self)
+        o_filter.remove_negative_values_options()
+        # o_filter.strikes_removal_option()
 
     def apply_filter_options(self):
-        # self.strikes_removal()
-        self.remove_negative_values()
-
-    def remove_negative_values(self):
+        print_memory_usage("Before applying filter")
         o_filter = Filters(parent=self)
         o_filter.remove_negative_values()
-
-    def strikes_removal(self):
-        o_filter = Filters(parent=self)
-        o_filter.strikes_removal()
+        # o_filter.strikes_removal()
+        print_memory_usage("After applying filter")
 
     # SINOGRAM ==============================================================================================
 
     def create_and_display_sinogram(self):
+        print_memory_usage("Before creating sinogram")
         sinogram_data = Sinogram.create_sinogram(data_3d=self.proj_tilt_corrected)
         o_display = Display(parent=self)
         o_display.sinogram(sinogram_data=sinogram_data)
         self.sinogram_before_ring_removal = sinogram_data
+        print_memory_usage("After creating sinogram")
 
     # ROTATION CENTER =======================================================================================
 
@@ -415,33 +407,3 @@ class LaminographyUi:
                   outputbase=folder,
                   name=self.input_folder_base_name)
         print(f"Done!")
-
-    def get_memory_usage(self):
-        """
-        Calculate the total memory usage of the current process and its children.
-
-        Returns
-        -------
-        float
-            Total memory usage in MB.
-        """
-        process = psutil.Process(os.getpid())
-        mem_info = process.memory_info()
-        mem_usage_mb = mem_info.rss / (1024 ** 2)  # Convert bytes to MB
-
-        # Include memory usage of child processes
-        for child in process.children(recursive=True):
-            try:
-                mem_info = child.memory_info()
-                mem_usage_mb += mem_info.rss / (1024 ** 2)
-            except psutil.NoSuchProcess:
-                continue
-
-        return mem_usage_mb
-
-    def print_memory_usage(self):
-        """
-        Print the total memory usage.
-        """
-        mem_usage = self.get_memory_usage()
-        print(f"Total memory usage: {mem_usage:.2f} MB")

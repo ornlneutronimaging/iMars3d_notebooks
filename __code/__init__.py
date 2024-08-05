@@ -1,7 +1,8 @@
 from qtpy.uic import loadUi
 import os
 
-NCORE = 10
+NCORE = 20
+STEP_SIZE = 5    # number of slices to process at the same time
 DEFAULT_CROP_ROI = [319, 1855, 162, 1994]
 DEFAULT_BACKROUND_ROI = [0, 250, 0, 1100]
 

@@ -9,10 +9,12 @@ import random
 
 from imars3d.backend.dataio.data import load_data
 
-from __code import DataType
+from __code import DataType, config
 from __code.parent import Parent
+from __code import NCORE
 from __code.file_folder_browser import FileFolderBrowser
 from __code.utilities.files import retrieve_list_of_files
+from __code.utilities.system import print_memory_usage
 
 
 class Load(Parent):
@@ -42,6 +44,8 @@ class Load(Parent):
         if self.parent.current_data_type == DataType.raw:
             list_folders = [os.path.abspath(list_folders)]
             self.working_dir = os.path.dirname(os.path.dirname(list_folders[0]))  # default folder is the parent folder of sample
+            [root, facility, instrument, ipts, *rest_of_path] = list_folders[0].split(os.path.sep)
+            self.parent.ipts_folder = os.path.sep + os.path.join(root, facility, instrument, ipts)
         else:
             list_folders = [os.path.abspath(_folder) for _folder in list_folders]
 
@@ -54,10 +58,16 @@ class Load(Parent):
         print(f"{self.parent.current_data_type} folder selected: {list_folders} with {len(list_files)} files)")
 
     def load_and_display_data(self):
+        if config.verbose:
+            print_memory_usage(message="Before loading")
         self.load_data()
         self.display_data()
+        if config.verbose:
+            print_memory_usage(message="After loading")
 
     def load_percentage_of_data(self, percentage_to_load=5):
+        if config.verbose:
+            print_memory_usage(message="Before loading")
         nbr_sample_file = len(self.parent.input_files[DataType.raw])
         if nbr_sample_file > 10:
             nbr_file_to_load = int(percentage_to_load * nbr_sample_file / 100)
@@ -75,6 +85,8 @@ class Load(Parent):
                       dc_files=self.parent.input_files[DataType.dc],
                       max_workers=20)  # use 20 workers
         )
+        if config.verbose:
+            print_memory_usage(message="After loading")
 
     def load_data(self):
 
@@ -82,7 +94,7 @@ class Load(Parent):
             load_data(ct_files=self.parent.input_files[DataType.raw],
                       ob_files=self.parent.input_files[DataType.ob],
                       dc_files=self.parent.input_files[DataType.dc],
-                      max_workers=20)  # use as many CPU as available
+                      max_workers=NCORE)  # use as many CPU as available
         )
 
         if not self.parent.select_dc_flag.value:
@@ -93,12 +105,6 @@ class Load(Parent):
 
             self.parent.dc_raw = np.array([np.zeros_like(self.parent.proj_raw[0])])
 
-        # debugging - use np.float16 instead of default np.float64
-        print(f"Before conversion: {self.parent.proj_raw.dtype= }")
-        # self.parent.proj_raw = self.parent.proj_raw.astype(np.float16)
-        # self.parent.ob_raw = self.parent.ob_raw.astype(np.float16)
-        # self.parent.dc_raw = self.parent.dc_raw.astype(np.float16)
-        # print(f"After conversion: {self.parent.proj_raw.dtype= }")
         self.parent.untouched_sample_data = copy.deepcopy(self.parent.proj_raw)
 
     def select_dc_options(self):

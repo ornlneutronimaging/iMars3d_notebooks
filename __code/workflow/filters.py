@@ -1,4 +1,6 @@
 import timeit
+import ipywidgets as widgets
+from IPython.display import display
 
 try:
     from imars3d.backend.corrections.ring_removal import remove_ring_artifact
@@ -38,3 +40,14 @@ class Filters(Parent):
         else:
             self.parent.proj_strikes_removed = self.parent.proj_tilt_corrected
             print(" Skipped strikes removal!")
+
+    def remove_negative_values_option(self):
+        self.parent.remove_negative_ui = widgets.Checkbox(value=False,
+                                                   description="Remove negative values")
+        display(self.parent.remove_negative_ui)
+
+    def strikes_removal_option(self):
+        self.parent.strikes_removal_ui = widgets.Checkbox(value=False,
+                                                   disabled=not enable_remove_ring_artifact,
+                                                   description="Strikes removal")
+        display(self.parent.strikes_removal_ui)

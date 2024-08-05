@@ -22,6 +22,7 @@ from __code.tilt.direct_minimization import DirectMinimization
 from __code.tilt.phase_correlation import PhaseCorrelation
 from __code.tilt.use_center import UseCenter
 from __code.utilities.math import convert_deg_in_rad
+from __code.utilities.system import print_memory_usage, delete_array
 
 
 class Tilt(Parent):
@@ -314,6 +315,8 @@ class Tilt(Parent):
 
     def apply_tilt_using_selected_algorithms(self):
 
+        print_memory_usage(message="Before applying tilt on selected algorithm")
+
         how_many_steps = len(self.parent.test_tilt_reconstruction)
         progress_bar = widgets.IntProgress(value=0,
                                            min=0,
@@ -378,8 +381,11 @@ class Tilt(Parent):
         progress_bar.close()
         self.list_options = list_options
 
+        print_memory_usage(message="After applying tilt on selected algorithm")
+
     def perform_reconstruction_on_selected_data_sets(self):
 
+        print_memory_usage(message="Before performing reconstruction on selected data sets")
         slices_indexes = self.reconstruct_slices.result
 
         # angles in rad
@@ -415,6 +421,8 @@ class Tilt(Parent):
                                                       pad=100,
                                                       ncore=NCORE)
                 self.test_tilt_reconstruction[key][TiltTestKeys.reconstructed][_slice_index] = _rec_img
+
+        print_memory_usage(message="After performing reconstruction on selected data sets")
 
     def display_test_results(self):
 

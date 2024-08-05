@@ -5,6 +5,7 @@ import timeit
 import tomopy
 import numpy as np
 import matplotlib.pyplot as plt
+from __code.utilities.system import print_memory_usage, delete_array
 
 try:
     from imars3d.backend.corrections.ring_removal import remove_ring_artifact
@@ -31,6 +32,8 @@ class RingRemoval(Parent):
         display(self.parent.ring_removal_ui)
 
     def apply_ring_removal_options(self):
+
+        print_memory_usage("Before applying ring removal")
 
         # bm3d
         if self.parent.ring_removal_ui.children[0].value:
@@ -74,6 +77,7 @@ class RingRemoval(Parent):
             self.proj_ring_removal_3 = self.proj_ring_removal_2
 
         self.parent.proj_ring_removed = self.proj_ring_removal_3
+        print_memory_usage("After applying ring removal")
 
     def test_ring_removal(self):
 

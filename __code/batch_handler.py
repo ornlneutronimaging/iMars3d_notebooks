@@ -45,19 +45,22 @@ class BatchHandler(Parent):
         # laminography parameters
         ui_laminography_dict = self.parent.laminography_settings_ui
         angle = ui_laminography_dict[BatchJsonKeys.angle].value
-        list_gpu_index = LaminographyEventHandler.get_gpu_index(laminography_dict[BatchJsonKeys.list_gpus])
+        list_gpu_index = LaminographyEventHandler.get_gpu_index(ui_laminography_dict[BatchJsonKeys.list_gpus])
         num_iter = ui_laminography_dict[BatchJsonKeys.num_iterations].value
         mrf_p = ui_laminography_dict[BatchJsonKeys.mrf_p].value
         mrf_sigma = ui_laminography_dict[BatchJsonKeys.mrf_sigma].value
         stop_threhsold = ui_laminography_dict[BatchJsonKeys.stop_threshold].value
         verbose = ui_laminography_dict[BatchJsonKeys.verbose].value
-        laminograph_dict = {BatchJsonKeys.angle: angle,
+        laminography_dict = {BatchJsonKeys.angle: angle,
                             BatchJsonKeys.list_gpus: list_gpu_index,
                             BatchJsonKeys.num_iterations: num_iter,
                             BatchJsonKeys.mrf_p: mrf_p,
                             BatchJsonKeys.mrf_sigma: mrf_sigma,
                             BatchJsonKeys.stop_threshold: stop_threhsold,
                             BatchJsonKeys.verbose: verbose}
+
+        # output folder
+
 
 
         # create json dictionary
@@ -89,4 +92,6 @@ class BatchHandler(Parent):
 
         save_json(json_file_name=json_file_name,
                   json_dictionary=json_dictionary)
+        
+        print(f"JSON config created: {json_file_name}")
         

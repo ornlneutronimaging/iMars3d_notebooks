@@ -3,11 +3,13 @@ import numpy as np
 from ipywidgets import interactive
 import ipywidgets as widgets
 from IPython.display import display
+from tqdm.auto import tqdm
 
 from imars3d.backend.corrections.intensity_fluctuation_correction import normalize_roi
 
 from __code.parent import Parent
-from __code import NCORE
+from __code import NCORE, STEP_SIZE
+from __code.utilities.system import print_memory_usage, delete_array
 
 
 class BeamFluctuationCorrection(Parent):
@@ -17,7 +19,7 @@ class BeamFluctuationCorrection(Parent):
                                                            description="Beam fluctuation correction")
         display(self.parent.beam_fluctuation_ui)
 
-    def apply_select_beam_fluctuation(self, batch_mode=False):
+    def select_beam_fluctuation_region(self, batch_mode=False):
 
         if batch_mode:
             display_mode = True
@@ -44,7 +46,7 @@ class BeamFluctuationCorrection(Parent):
 
             def plot_crop(left, right, top, bottom, vmin, vmax):
 
-                fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(5, 5))
+                _, ax = plt.subplots(nrows=1, ncols=1, figsize=(5, 5))
                 ax.imshow(integrated_image, vmin=vmin, vmax=vmax)
 
                 ax.axvline(left, color='blue', linestyle='--')
@@ -93,6 +95,8 @@ class BeamFluctuationCorrection(Parent):
 
     def _beam_fluctuation(self, background_region=None):
 
+        print_memory_usage("Before beam fluctuation")
+
         # build roi
         if background_region is None:
             print("No background region selected, skip roi beam fluctuation correction")
@@ -108,18 +112,17 @@ class BeamFluctuationCorrection(Parent):
         # cache the before image for display later
         proj_before = np.array(self.parent.proj_norm[0])
 
-        # apply beam fluctuation correction
-        self.parent.proj_norm_beam_fluctuation = normalize_roi(
-                    ct=self.parent.proj_norm,
+        num_proj = self.parent.proj_norm.shape[0]
+        step_size = NCORE * STEP_SIZE
+        for i in tqdm(range(0, num_proj, step_size)):
+            end_idx = min(i + step_size, num_proj)
+            self.parent.proj_norm_beam_fluctuation[i: end_idx] = normalize_roi(
+                    ct=self.parent.proj_norm[i: end_idx],
                     roi=roi,
                     max_workers=NCORE,
         )
 
-        # cleanup
-        print("Deleting proj_norm and releasing memory ...")
-        self.parent.proj_norm = None
-        import gc
-        gc.collect()
+        delete_array(self.parent.proj_norm)
 
         _, (ax0, ax1) = plt.subplots(
             nrows=2,
@@ -136,3 +139,5 @@ class BeamFluctuationCorrection(Parent):
         fig1 = ax1.imshow(self.parent.proj_norm_beam_fluctuation[0])
         ax1.set_title("after")
         plt.colorbar(fig1, ax=ax1)
+
+        print_memory_usage("After beam fluctuation")

@@ -9,26 +9,30 @@ from imars3d.backend.dataio.data import save_data
 
 from __code.parent import Parent
 from __code.file_folder_browser import FileFolderBrowser
-from __code import NCORE
+from __code import NCORE, STEP_SIZE
+from __code.utilities.system import print_memory_usage, delete_array
 
 
 class Normalization(Parent):
 
     def normalization_and_display(self):
+        print_memory_usage(message="Before")
         print(f"Running normalization ...")
         t0 = timeit.default_timer()
+        
         # note: we need to use in place operation to reduce memory usage
         # step 0: cast to float32 so that we can use proj_gamma as output container
-        self.parent.proj_gamma = self.parent.proj_gamma.astype(np.float32)
+        # self.parent.proj_gamma = self.parent.proj_gamma.astype(np.float32)
         # step 1: process NCORE * 5 frames at a time
         num_proj = self.parent.proj_gamma.shape[0]
-        step_size = NCORE * 5
+        step_size = NCORE * STEP_SIZE
         for i in tqdm(range(0, num_proj, step_size)):
             end_idx = min(i + step_size, num_proj)
             self.parent.proj_gamma[i:end_idx] = normalization(
                 arrays=self.parent.proj_gamma[i:end_idx],
                 flats=self.parent.ob_crop,
                 darks=self.parent.dc_crop,
+                max_workers=NCORE
             )
         # step 2: rename the array
         self.parent.proj_norm = self.parent.proj_gamma
@@ -41,11 +45,8 @@ class Normalization(Parent):
         plt.imshow(self.parent.proj_norm_min)
         plt.colorbar()
 
-        # cleanup (just reduce counter here)
-        print("Deleting proj_gamma and releasing memory ...")
-        self.parent.proj_gamma = None
-        import gc
-        gc.collect()
+        print_memory_usage(message="After")
+        delete_array(self.parent.proj_gamma)
 
     def export_normalization(self):
         working_dir = os.path.join(self.parent.working_dir, "shared", "processed_data")
