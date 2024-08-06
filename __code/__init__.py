@@ -122,3 +122,5 @@ class BatchJsonKeys:
     filt_cutoff = 'filt_cutoff'
     filt_type = 'filt_type'
     
+    output_folder = 'output_folder'
+    

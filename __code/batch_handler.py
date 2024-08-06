@@ -1,4 +1,7 @@
 import os
+import logging
+from IPython.core.display import HTML
+from IPython.display import display
 
 from __code.parent import Parent
 from __code import DataType, BatchJsonKeys
@@ -86,12 +89,17 @@ class BatchHandler(Parent):
                                       f"laminography_{base_folder_name}_{_current_time}.json")
 
         log_file_name = os.path.join(os.path.expanduser("~"),
-                                     f"laminography_{base_folder_name}_{_current_time}.cfg")
+                                     f"laminography_{base_folder_name}_{_current_time}.log")
 
-        # print(f"{json_dictionary =}")
+        logging.basicConfig(filename=log_file_name,
+                            filemode='a',
+                            format='[%(levelname)s] - %(asctime)s - %(message)s',
+                            level=logging.INFO)
+        logging.info("*** Starting a new process ***")
 
         save_json(json_file_name=json_file_name,
                   json_dictionary=json_dictionary)
-        
-        print(f"JSON config created: {json_file_name}")
-        
+        logging.info(f"json file created: {json_file_name}")
+
+        display(HTML(f"<h2>Config file:</h2> {json_file_name}"))
+        display(HTML(f"<h2>LOG file:</h2> {log_file_name}"))
