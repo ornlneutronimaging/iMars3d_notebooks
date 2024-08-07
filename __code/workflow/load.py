@@ -94,7 +94,7 @@ class Load(Parent):
             load_data(ct_files=self.parent.input_files[DataType.raw],
                       ob_files=self.parent.input_files[DataType.ob],
                       dc_files=self.parent.input_files[DataType.dc],
-                      max_workers=NCORE)  # use as many CPU as available
+                      max_workers=NCORE)
         )
 
         if not self.parent.select_dc_flag.value:

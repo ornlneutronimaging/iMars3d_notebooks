@@ -4,6 +4,7 @@ from IPython.core.display import HTML
 from IPython.display import display
 
 from __code.parent import Parent
+from __code import NCORE, STEP_SIZE
 from __code import DataType, BatchJsonKeys
 from __code.laminography_event_handler import LaminographyEventHandler
 from __code.utilities.time import get_current_time_in_special_file_name_format
@@ -14,10 +15,14 @@ class BatchHandler(Parent):
 
     def create_config_file(self):
         
+        # general settings
+        number_of_cores = NCORE
+
         # input files
         list_raw_files = self.parent.input_files[DataType.raw]
         list_ob_files = self.parent.input_files[DataType.ob]
         list_dc_files = self.parent.input_files[DataType.dc]
+        select_dc_flag = self.parent.select_dc_flag
 
         # crop region (left, right, top, bottom)
         crop_region = list(self.parent.cropping.result)
@@ -63,26 +68,9 @@ class BatchHandler(Parent):
                             BatchJsonKeys.verbose: verbose}
 
         # output folder
+        output_folder = self.parent.output_folder
 
-
-
-        # create json dictionary
-        json_dictionary = {BatchJsonKeys.list_raw_files: list_raw_files,
-                           BatchJsonKeys.list_ob_files: list_ob_files,
-                           BatchJsonKeys.list_dc_files: list_dc_files,
-                           BatchJsonKeys.crop_region: crop_region,
-                           BatchJsonKeys.gamma_filtering_flag: gamma_filtering_flag,
-                           BatchJsonKeys.beam_fluctuation_flag:beam_fluctuation_flag,
-                           BatchJsonKeys.beam_fluctuation_region: beam_fluctuation_region,
-                           BatchJsonKeys.tilt_value: tilt_value,
-                           BatchJsonKeys.remove_negative_values_flag: remove_negative_values_flag,
-                           BatchJsonKeys.bm3d_flag: bm3d_flag,
-                           BatchJsonKeys.tomopy_v0_flag: tomopy_v0_flag,
-                           BatchJsonKeys.ketcham_flag: ketcham_flag,
-                           BatchJsonKeys.range_slices_to_reconstruct: range_slices_to_reconstruct,
-                           BatchJsonKeys.laminography_dict: laminography_dict,
-                           }
-
+        # create names of output and config file
         _current_time = get_current_time_in_special_file_name_format()
         base_folder_name = self.parent.raw_folder_name
         json_file_name = os.path.join(os.path.expanduser("~"), 
@@ -96,6 +84,28 @@ class BatchHandler(Parent):
                             format='[%(levelname)s] - %(asctime)s - %(message)s',
                             level=logging.INFO)
         logging.info("*** Starting a new process ***")
+
+        # create json dictionary
+        json_dictionary = {BatchJsonKeys.list_raw_files: list_raw_files,
+                           BatchJsonKeys.list_ob_files: list_ob_files,
+                           BatchJsonKeys.list_dc_files: list_dc_files,
+                           BatchJsonKeys.select_dc_flag: select_dc_flag,
+                           BatchJsonKeys.crop_region: crop_region,
+                           BatchJsonKeys.gamma_filtering_flag: gamma_filtering_flag,
+                           BatchJsonKeys.beam_fluctuation_flag:beam_fluctuation_flag,
+                           BatchJsonKeys.beam_fluctuation_region: beam_fluctuation_region,
+                           BatchJsonKeys.tilt_value: tilt_value,
+                           BatchJsonKeys.remove_negative_values_flag: remove_negative_values_flag,
+                           BatchJsonKeys.bm3d_flag: bm3d_flag,
+                           BatchJsonKeys.tomopy_v0_flag: tomopy_v0_flag,
+                           BatchJsonKeys.ketcham_flag: ketcham_flag,
+                           BatchJsonKeys.range_slices_to_reconstruct: range_slices_to_reconstruct,
+                           BatchJsonKeys.laminography_dict: laminography_dict,
+                           BatchJsonKeys.output_folder: output_folder,
+                           BatchJsonKeys.log_file_name: log_file_name,
+                           BatchJsonKeys.number_of_cores: number_of_cores,
+                           BatchJsonKeys.step_size: STEP_SIZE,
+                           }
 
         save_json(json_file_name=json_file_name,
                   json_dictionary=json_dictionary)

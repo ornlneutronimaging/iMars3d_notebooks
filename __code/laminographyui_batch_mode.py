@@ -480,6 +480,7 @@ class LaminographyUi:
         working_dir = os.path.join(self.working_dir[DataType.ipts], "shared", "processed_data")
         if not os.path.exists(working_dir):
             working_dir = self.working_dir
+            self.output_folder = working_dir
 
         # o_file_browser = FileFolderBrowser(working_dir=working_dir,
         #                                    next_function=self.export_data)
@@ -495,6 +496,7 @@ class LaminographyUi:
 
     def display_output_folder(self, output_folder):
         print(f"Output folder: {output_folder}")
+        self.output_folder = output_folder
 
     # def export_data(self, folder):
     #     print(f"New folder will be created in {folder} and called {self.input_folder_base_name}_YYYYMMDDHHMM")

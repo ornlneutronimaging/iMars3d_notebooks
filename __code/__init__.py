@@ -97,6 +97,8 @@ class BatchJsonKeys:
     list_raw_files = 'list_raw_files'
     list_ob_files = 'list_ob_files'
     list_dc_files = 'list_dc_files'
+    select_dc_flag = 'select_dc_flag'
+
     crop_region = 'crop_region'
     gamma_filtering_flag = 'gamma_filtering_flag'
     beam_fluctuation_flag = 'beam_fluctuation_flag'
@@ -123,4 +125,7 @@ class BatchJsonKeys:
     filt_type = 'filt_type'
     
     output_folder = 'output_folder'
+    log_file = 'log_file'
+    number_of_cores = 'number_of_cores'
+    step_size = 'step_size'
     

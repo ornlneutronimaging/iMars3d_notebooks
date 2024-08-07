@@ -41,6 +41,18 @@ def print_memory_usage(message="", end="\n"):
     print(f"{message}: total memory usage = {mem_usage:.2f}{units}", end=end)
 
 
+def retrieve_memory_usage():
+    mem_usage = get_memory_usage()
+
+    if mem_usage < 999:
+        units = 'MB'
+    else:
+        mem_usage /= 1000
+        units = 'GB'
+
+    return f"{mem_usage:.2f}{units}"
+
+
 def delete_array(object_array=None):
     '''delete array from memory '''
     object_array = None
