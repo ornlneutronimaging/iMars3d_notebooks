@@ -2,6 +2,7 @@ import os
 import logging
 from IPython.core.display import HTML
 from IPython.display import display
+import subprocess
 
 from __code.parent import Parent
 from __code import NCORE, STEP_SIZE
@@ -22,7 +23,7 @@ class BatchHandler(Parent):
         list_raw_files = self.parent.input_files[DataType.raw]
         list_ob_files = self.parent.input_files[DataType.ob]
         list_dc_files = self.parent.input_files[DataType.dc]
-        select_dc_flag = self.parent.select_dc_flag
+        select_dc_flag = self.parent.select_dc_flag.value
 
         # crop region (left, right, top, bottom)
         crop_region = list(self.parent.cropping.result)
@@ -73,10 +74,10 @@ class BatchHandler(Parent):
         # create names of output and config file
         _current_time = get_current_time_in_special_file_name_format()
         base_folder_name = self.parent.raw_folder_name
-        json_file_name = os.path.join(os.path.expanduser("~"), 
+        json_file_name = os.path.join(output_folder, 
                                       f"laminography_{base_folder_name}_{_current_time}.json")
 
-        log_file_name = os.path.join(os.path.expanduser("~"),
+        log_file_name = os.path.join(output_folder,
                                      f"laminography_{base_folder_name}_{_current_time}.log")
 
         logging.basicConfig(filename=log_file_name,
@@ -113,3 +114,5 @@ class BatchHandler(Parent):
 
         display(HTML(f"<h2>Config file:</h2> {json_file_name}"))
         display(HTML(f"<h2>LOG file:</h2> {log_file_name}"))
+
+        

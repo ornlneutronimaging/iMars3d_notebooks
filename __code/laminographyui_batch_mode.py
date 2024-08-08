@@ -192,13 +192,12 @@ class LaminographyUi:
         self.display_section_title(name="Output folder")
         self.select_export_folder()
 
-
-
-
-
     def launch_batch_job(self):
         o_batch = BatchHandler(parent=self)
         o_batch.create_config_file()
+
+
+
 
         # launch command
         pass

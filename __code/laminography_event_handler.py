@@ -172,10 +172,7 @@ class LaminographyEventHandler:
         nbr_col = self.nbr_col
         off_center_u = nbr_col/2 - rot_center_pixel
         miscalib["delta_u"] = off_center_u * self.det_x
-        
-        #DEBUGGING
-        miscalib["delta_u"] = -200
-
+       
         off_center_v = 0
         miscalib["delta_v"] = off_center_v * self.det_y
 
