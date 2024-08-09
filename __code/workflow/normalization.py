@@ -42,7 +42,7 @@ class Normalization(Parent):
 
         # visualization
         plt.figure(num="np.mean(norm)")
-        # self.parent.proj_norm_min = np.min(self.parent.proj_norm, axis=0)
+        self.parent.proj_norm_min = np.min(self.parent.proj_norm, axis=0)
         proj_norm_for_display = np.mean(self.parent.proj_norm, axis=0)
         plt.imshow(proj_norm_for_display)
         plt.colorbar()
