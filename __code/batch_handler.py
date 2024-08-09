@@ -80,6 +80,10 @@ class BatchHandler(Parent):
         log_file_name = os.path.join(output_folder,
                                      f"laminography_{base_folder_name}_{_current_time}.log")
 
+        # DEBUGGING ONLY - REMOVE_ME AFTER
+        log_file_name = os.path.join(os.path.expanduser("~/"), "laminography_DEBUGGIN_ONLY.log")
+        # END OF DEBUGGING ONLY
+
         logging.basicConfig(filename=log_file_name,
                             filemode='a',
                             format='[%(levelname)s] - %(asctime)s - %(message)s',

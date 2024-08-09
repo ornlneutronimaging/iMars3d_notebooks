@@ -99,9 +99,9 @@ class Load(Parent):
 
         if not self.parent.select_dc_flag.value:
             # create zeros array of dc 
-
-            print(f"{np.shape(self.parent.proj_raw) =}")
-            print(f"{np.shape(self.parent.proj_raw[0]) =}")
+            print("no dc, using 0 arrays")
+            # print(f"{np.shape(self.parent.proj_raw) =}")
+            # print(f"{np.shape(self.parent.proj_raw[0]) =}")
 
             self.parent.dc_raw = np.array([np.zeros_like(self.parent.proj_raw[0])])
 

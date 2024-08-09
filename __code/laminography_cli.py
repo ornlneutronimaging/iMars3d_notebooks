@@ -52,7 +52,7 @@ def main(config_file_name):
     logging.info("*** Starting the batch process ***")
     
     # load data
-    list_raw_files = config_dict[BatchJsonKeys.list_raw_files]
+    list_raw_files = config_dict[BatchJsonKeys.list_raw_files]   #FOR DEBUGGING ONLY, I only load the first 20
     list_ob_files = config_dict[BatchJsonKeys.list_ob_files]
     list_dc_files = config_dict[BatchJsonKeys.list_dc_files]
 
@@ -61,6 +61,15 @@ def main(config_file_name):
     logging.info(f"Number of dc: {len(list_dc_files)}")
     logging.info(f"Memory usage: {retrieve_memory_usage()}")
     
+    # checking if files are on the fastdata folder
+    if os.path.exists(f"/fastdata/{list_raw_files[0]}"):
+        print("yes!!!!!, it's in /fastdata")
+        list_raw_files = [f"/fastdata/{_file}" for _file in list_raw_files]
+    if os.path.exists(f"/fastdata/{list_ob_files[0]}"):
+        list_ob_files = [f"/fastdata/{_file}" for _file in list_ob_files]
+    if os.path.exists(f"/fastdata/{list_dc_files[0]}"):
+        list_dc_files = [f"/fastdata/{_file}" for _file in list_dc_files]
+
     logging.info(f"Loading the files ...")
     proj, ob, dc, rot_angles = load_data(ct_files=list_raw_files,
                                          ob_files=list_ob_files,
@@ -71,14 +80,6 @@ def main(config_file_name):
     rot_angles_sorted.sort()
     mean_delta_angle = np.mean([y - x for (x, y) in zip(rot_angles_sorted[:-1],
                                                         rot_angles_sorted[1:])])
-
-
-    return ## DEBUGGING
-
-
-
-
-
 
     if config_dict[BatchJsonKeys.select_dc_flag]:
         dc = np.array([np.zeros_like(proj[0])])
@@ -122,6 +123,9 @@ def main(config_file_name):
 
     # normalization
     logging.info(f"Normalization ...")
+    logging.info(f" {np.shape(proj)= }")
+    logging.info(f" {np.shape(ob)= }")
+    logging.info(f" {np.shape(dc)= }")
     for i in np.arange(0, number_of_projections, step_size):
         end_idx = min(i + step_size, number_of_projections)
         proj[i:end_idx] = normalization(
@@ -153,6 +157,8 @@ def main(config_file_name):
         logging.info(f"Memory usage: {retrieve_memory_usage()}")
     else:
         logging.info(f"Beam fluctuation correction skipped!")
+
+    return ## DEBUGGING
 
     # tilt_calculation
     tilt_value = config_dict[BatchJsonKeys.tilt_value]

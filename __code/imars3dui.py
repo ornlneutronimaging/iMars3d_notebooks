@@ -180,11 +180,11 @@ class Imars3dui:
 
     def apply_select_beam_fluctuation(self):
         o_beam = BeamFluctuationCorrection(parent=self)
-        o_beam.apply_select_beam_fluctuation()
+        o_beam.select_beam_fluctuation_region()
 
     def define_beam_fluctuation_settings(self):
         o_beam = BeamFluctuationCorrection(parent=self)
-        o_beam.apply_select_beam_fluctuation()
+        o_beam.select_beam_fluctuation_region()
 
     def beam_fluctuation_correction_embedded(self):
         o_beam = BeamFluctuationCorrection(parent=self)

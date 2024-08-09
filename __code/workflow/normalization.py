@@ -22,9 +22,10 @@ class Normalization(Parent):
         
         # note: we need to use in place operation to reduce memory usage
         # step 0: cast to float32 so that we can use proj_gamma as output container
-        # self.parent.proj_gamma = self.parent.proj_gamma.astype(np.float32)
+        self.parent.proj_gamma = self.parent.proj_gamma.astype(np.float32)
         # step 1: process NCORE * 5 frames at a time
         num_proj = self.parent.proj_gamma.shape[0]
+
         step_size = NCORE * STEP_SIZE
         for i in tqdm(range(0, num_proj, step_size)):
             end_idx = min(i + step_size, num_proj)
@@ -40,9 +41,10 @@ class Normalization(Parent):
         print(f"normalization done in {t1 - t0:.2f}s")
 
         # visualization
-        plt.figure()
-        self.parent.proj_norm_min = np.min(self.parent.proj_norm, axis=0)
-        plt.imshow(self.parent.proj_norm_min)
+        plt.figure(num="np.mean(norm)")
+        # self.parent.proj_norm_min = np.min(self.parent.proj_norm, axis=0)
+        proj_norm_for_display = np.mean(self.parent.proj_norm, axis=0)
+        plt.imshow(proj_norm_for_display)
         plt.colorbar()
 
         print_memory_usage(message="After")
