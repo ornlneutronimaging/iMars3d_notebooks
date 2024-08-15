@@ -30,6 +30,8 @@ class Crop(Parent):
         crop_bottom = self.parent.crop_roi[3] if self.parent.crop_roi[3] else height - 1
 
         def plot_crop(left, right, top, bottom, vmin, vmax):
+
+            plt.figure(0)
             _, ax = plt.subplots(nrows=1, ncols=1, figsize=(5, 5))
             ax.imshow(proj_min, vmin=vmin, vmax=vmax)
             ax.set_title("np.mean(proj_raw)")
@@ -74,13 +76,14 @@ class Crop(Parent):
     def crop_region(self, crop_region):
         print_memory_usage(message='Before')
         print(f"Running crop ...")
+
+        print(f"{crop_region =}")
+        print(f"{np.shape(self.parent.proj_raw) =}")
+
         self.parent.proj_crop = crop(arrays=self.parent.proj_raw,
                                      crop_limit=crop_region)
         self.parent.ob_crop = crop(arrays=self.parent.ob_raw,
                                    crop_limit=crop_region)
-        self.parent.dc_crop = crop(arrays=self.parent.dc_raw,
-                                   crop_limit=crop_region)
-
         self.parent.proj_crop_min = crop(arrays=self.parent.proj_min,
                                          crop_limit=crop_region)
 
@@ -88,7 +91,6 @@ class Crop(Parent):
 
         delete_array(self.parent.proj_raw)
         delete_array(self.parent.ob_raw)
-        delete_array(self.parent.dc_raw)
         delete_array(self.parent.proj_min)
 
         print_memory_usage(message='After')
