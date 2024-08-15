@@ -25,13 +25,13 @@ from imars3d.backend.dataio.data import save_data
 
 from __code import DataType, TiltAlgorithms, TiltTestKeys, config
 
-from __code.workflow.load import Load
+from __code.workflow.load_tof import Load
 from __code.workflow.crop import Crop
 from __code.workflow.gamma_filtering import GammaFiltering
-from __code.workflow.normalization import Normalization
+from __code.workflow.normalization_tof import Normalization
 from __code.workflow.beam_fluctuation_correction import BeamFluctuationCorrection
 from __code.workflow.transmission_to_attenuation import TransmissionToAttenuation
-from __code.workflow.tilt import Tilt
+from __code.workflow.tilt_tof import Tilt
 from __code.workflow.reconstruction import TestReconstruction
 from __code.workflow.ring_removal import RingRemoval
 from __code.workflow.filters import Filters
@@ -42,14 +42,13 @@ from __code.display import Display
 
 default_input_folder = {DataType.raw: 'ct_scans',
                         DataType.ob: 'ob',
-                        DataType.dc: 'dc'}
+                        }
 
 
-class Imars3dui:
+class Imars3duiTOF:
 
     working_dir = {DataType.raw: "",
                    DataType.ob: "",
-                   DataType.dc: "",
                    }
 
     input_data_folders = {}
@@ -82,7 +81,6 @@ class Imars3dui:
     # data arrays
     proj_raw = None
     ob_raw = None
-    dc_raw = None
 
     o_tilt = None
     o_test_reconstruction = None
@@ -102,8 +100,7 @@ class Imars3dui:
         self.working_dir[DataType.ipts] = working_dir
         self.working_dir[DataType.raw] = os.path.join(init_path_to_raw, default_input_folder[DataType.raw])
         self.working_dir[DataType.ob] = os.path.join(init_path_to_raw, default_input_folder[DataType.ob])
-        self.working_dir[DataType.dc] = os.path.join(init_path_to_raw, default_input_folder[DataType.dc])
-
+        
     # SELECT INPUT DATA ===============================================================================================
     def select_raw(self):
         o_load = Load(parent=self)
@@ -112,15 +109,6 @@ class Imars3dui:
     def select_ob(self):
         o_load = Load(parent=self)
         o_load.select_folder(data_type=DataType.ob,
-                             multiple_flag=True)
-
-    def select_dc_options(self):
-        o_load = Load(parent=self)
-        o_load.select_dc_options()
-
-    def select_dc(self):
-        o_load = Load(parent=self)
-        o_load.select_folder(data_type=DataType.dc,
                              multiple_flag=True)
 
     def data_selected(self, list_folders):
@@ -132,12 +120,10 @@ class Imars3dui:
         self.input_files[DataType.raw] = self.retrieve_list_of_files(raw_folder)
         ob_folder = self.input_data_folders[DataType.ob]
         self.input_files[DataType.ob] = self.retrieve_list_of_files(ob_folder)
-        dc_folder = self.input_data_folders[DataType.dc]
-        self.input_files[DataType.dc] = self.retrieve_list_of_files(dc_folder)
-
+        
     def load_and_display_data(self):
         o_load = Load(parent=self)
-        o_load.load_and_display_data()
+        o_load.load_and_display_data(skip_rotation_angles=True)
 
     # CROP ===============================================================================================
 
@@ -218,9 +204,13 @@ class Imars3dui:
         o_tilt = Tilt(parent=self)
         o_tilt.find_0_180_degrees_files()
 
-    def calculate_tilt(self):
+    def calculate_tilt(self, index_0_degree, index_180_degree):
         self.o_tilt = Tilt(parent=self)
-        self.o_tilt.calculate_tilt()
+        self.o_tilt.calculate_tilt(index_0_degree=index_0_degree,
+                                   index_180_degree=index_180_degree)
+
+    def apply_tilt(self):
+        pass
 
     # def apply_tilt_and_display(self):
     #     o_tilt = Tilt(parent=self)

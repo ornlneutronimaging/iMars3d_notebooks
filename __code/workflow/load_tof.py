@@ -57,10 +57,10 @@ class Load(Parent):
 
         print(f"{self.parent.current_data_type} folder selected: {list_folders} with {len(list_files)} files)")
 
-    def load_and_display_data(self):
+    def load_and_display_data(self, skip_rotation_angles=False):
         if config.verbose:
             print_memory_usage(message="Before loading")
-        self.load_data()
+        self.load_data(skip_rotation_angles=skip_rotation_angles)
         self.display_data()
         if config.verbose:
             print_memory_usage(message="After loading")
@@ -82,35 +82,23 @@ class Load(Parent):
         self.parent.proj_raw, self.parent.ob_raw, self.parent.dc_raw, self.parent.rot_angles = (
             load_data(ct_files=list_raw_file,
                       ob_files=self.parent.input_files[DataType.ob],
-                      dc_files=self.parent.input_files[DataType.dc],
+                      dc_files=self.parent.input_files[DataType.ob],
                       max_workers=20)  # use 20 workers
         )
         if config.verbose:
             print_memory_usage(message="After loading")
 
-    def load_data(self):
+    def load_data(self, skip_rotation_angles=False):
 
         self.parent.proj_raw, self.parent.ob_raw, self.parent.dc_raw, self.parent.rot_angles = (
             load_data(ct_files=self.parent.input_files[DataType.raw],
                       ob_files=self.parent.input_files[DataType.ob],
-                      dc_files=self.parent.input_files[DataType.dc],
-                      max_workers=NCORE)
+                      dc_files=self.parent.input_files[DataType.ob],
+                      max_workers=NCORE,
+                      skip_rotation_angles=skip_rotation_angles)
         )
 
-        if not self.parent.select_dc_flag.value:
-            # create zeros array of dc 
-            print("no dc, using 0 arrays")
-            # print(f"{np.shape(self.parent.proj_raw) =}")
-            # print(f"{np.shape(self.parent.proj_raw[0]) =}")
-
-            self.parent.dc_raw = np.array([np.zeros_like(self.parent.proj_raw[0])])
-
         self.parent.untouched_sample_data = copy.deepcopy(self.parent.proj_raw)
-
-    def select_dc_options(self):
-        self.parent.select_dc_flag = widgets.Checkbox(value=True,
-                                                      description="Use dark current")
-        display(self.parent.select_dc_flag)
 
     def display_data(self):
 
@@ -118,29 +106,18 @@ class Load(Parent):
         self.parent.proj_min = proj_min
         ob_max = np.max(self.parent.ob_raw, axis=0)
         self.parent.ob_max = ob_max
-        dc_max = np.max(self.parent.dc_raw, axis=0)
-        self.parent.dc_max = dc_max
-        
+       
         # max_value = np.max(mean_image)
 
-        if self.parent.select_dc_flag.value:
-            nrows = 3
-        else:
-            nrows = 2
-        fig, axs = plt.subplots(nrows=nrows, ncols=1, figsize=(5,9))
+        fig, (ax0, ax1) = plt.subplots(nrows=2, ncols=1, figsize=(5,9))
 
-        plt0 = axs[0].imshow(proj_min)
-        fig.colorbar(plt0, ax=axs[0])
-        axs[0].set_title("np.min(proj_raw)")
+        plt0 = ax0.imshow(proj_min)
+        fig.colorbar(plt0, ax=ax0)
+        ax0.set_title("np.min(proj_raw)")
 
-        plt1 = axs[1].imshow(ob_max)
-        fig.colorbar(plt1, ax=axs[1])
-        axs[1].set_title("np.max(ob_raw)")
-
-        if self.parent.select_dc_flag.value:
-            plt2 = axs[2].imshow(dc_max)
-            fig.colorbar(plt2, ax=axs[2])
-            axs[2].set_title("np.max(dc_raw)")
+        plt1 = ax1.imshow(ob_max)
+        fig.colorbar(plt1, ax=ax1)
+        ax1.set_title("np.max(ob_raw)")
 
         fig.tight_layout()
 
